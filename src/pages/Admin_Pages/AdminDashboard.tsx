@@ -681,12 +681,13 @@ const AdminProductQAView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, reset } = useForm<SignupForm>();
   const { toast } = useToast();
+  const API_URL = import.meta.env.VITE_API_URL;
 
   // Create new user form
   const onSubmit = async (data: SignupForm) => {
     setIsSubmitting(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+      
       const response = await fetch(`${API_URL}/api/single_signup/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -726,8 +727,8 @@ const AdminProductQAView: React.FC = () => {
         setLoading(true);
 
         const [productRes, roleCountRes] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/product_qa_view/"),
-          fetch("http://127.0.0.1:8000/api/get_role_count/"),
+          fetch(`${API_URL}/api/product_qa_view/`),
+          fetch(`${API_URL}/api/get_role_count/`),
         ]);
 
         if (!productRes.ok || !roleCountRes.ok)
