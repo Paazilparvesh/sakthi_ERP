@@ -60,6 +60,7 @@ const StepProgressBar: React.FC<StepProgressBarProps> = ({ step }) => {
 const Role1Dashboard: React.FC = () => {
   const [step, setStep] = useState<number>(1);
   const [showModal, setShowModal] = useState(false); // <-- modal visibility
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getTodayDate = (): string => new Date().toISOString().split("T")[0];
 
@@ -165,6 +166,12 @@ const Role1Dashboard: React.FC = () => {
   }
 
   const handleConfirm = async () => {
+
+    if (isSubmitting) return; // Prevent double-click submissions
+
+    setIsSubmitting(true); // Disable button + start loading
+
+
     try {
       const response = await addProductDetails(formData);
       console.log("✅ Success:", response);
@@ -199,7 +206,9 @@ const Role1Dashboard: React.FC = () => {
         variant: "destructive",
       });
       console.error(err);
-    }
+    } finally {
+    setIsSubmitting(false); // Re-enable button after completion
+  }
   };
 
   return (
@@ -264,8 +273,9 @@ const Role1Dashboard: React.FC = () => {
               <Button
                 className="bg-green-700 text-white px-6 py-2 rounded-lg hover:bg-green-800 w-full sm:w-auto"
                 onClick={handleConfirm}
+                disabled={isSubmitting}
               >
-                Submit
+                {isSubmitting ? "Submitting..." : "Submit"}
               </Button>
               <Button
                 variant="outline"
