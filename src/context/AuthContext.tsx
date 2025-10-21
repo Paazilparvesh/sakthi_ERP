@@ -1,83 +1,92 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { User, UserRole, AuthContextType } from "../types/user.type.ts";
 
-export type UserRole = 'role1' | 'role2' | 'role3' | 'role4' | 'admin';
-
-interface User {
-  email: string;
-  name: string;
-  role: UserRole;
-  token: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
-  isAuthenticated: boolean;
-}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Dummy user data for authentication
-const DUMMY_USERS: Record<string, { password: string; name: string; role: UserRole }> = {
-  'role1@sakthi.com': { password: 'password1', name: 'Role 1 User', role: 'role1' },
-  'role2@sakthi.com': { password: 'password2', name: 'Role 2 User', role: 'role2' },
-  'role3@sakthi.com': { password: 'password3', name: 'Role 3 User', role: 'role3' },
-  'role4@sakthi.com': { password: 'password4', name: 'Role 4 User', role: 'role4' },
-  'admin@sakthi.com': { password: 'admin123', name: 'Admin User', role: 'admin' },
-};
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load user from localStorage on mount
+  // ✅ Restore user on app load
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('user');
+    try {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser?.username && parsedUser?.role_type) {
+          setUser(parsedUser);
+        } else {
+          localStorage.removeItem("user");
+        }
       }
+    } catch (error) {
+      console.error("Error restoring user from localStorage:", error);
+      localStorage.removeItem("user");
+    } finally {
+      // ✅ Important: end loading
+      setIsLoading(false);
     }
   }, []);
 
-  const login = (email: string, password: string): boolean => {
-    const userData = DUMMY_USERS[email.toLowerCase()];
-    
-    if (userData && userData.password === password) {
-      const newUser: User = {
-        email,
-        name: userData.name,
-        role: userData.role,
-        token: `dummy-token-${Date.now()}`,
-      };
-      
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      return true;
+  const login = async (
+    username: string,
+    password: string,
+    role_type: UserRole
+  ): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const API_URL = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${API_URL}/api/single_login/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, role_type }),
+      });
+
+      if (!response.ok) {
+        console.error("Login failed:", response.statusText);
+        return false;
+      }
+
+      const data = await response.json();
+
+      if (data.msg === "Login successful") {
+        const loggedUser: User = {
+          username: data.username,
+          role_type: data.role_type,
+        };
+        setUser(loggedUser);
+        localStorage.setItem("user", JSON.stringify(loggedUser));
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error during login:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-    
-    return false;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, isAuthenticated: !!user, isLoading }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };
