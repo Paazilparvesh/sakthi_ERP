@@ -66,12 +66,6 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children }) => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t bg-white py-4 mt-auto shadow-inner">
-        <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-400">
-          © {new Date().getFullYear()} Sakthi Technology. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 };

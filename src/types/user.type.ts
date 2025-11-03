@@ -1,4 +1,4 @@
-export type UserRole = "role1" | "QA" | "product" | "Admin" | "accountent";
+export type UserRole = "inward" | "QA" | "Admin" | "accountent";
 
 export interface User {
   username: string;

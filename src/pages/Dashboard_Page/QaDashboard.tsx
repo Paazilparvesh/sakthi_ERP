@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { fetchJSON } from "@/utils/api"; // ✅ import the reusable API utility
+
+// Types
+import { QaItem } from "@/types/qa.type";
 
 // Components
-import ProductionTable, { ProductionItem } from "@/components/Role2Components/ProductionTable";
-import SerialDetail from "@/components/Role2Components/SerialDetail";
-import AddQAForm from "@/components/Role2Components/AddQAForm";
+import QaList from "@/components/QaComponents/QaList";
+import SerialDetail from "@/components/QaComponents/QaDetail";
+import QaFormWrapper from "@/components/QaComponents/QaFormWrapper";
 
-const Role2Dashboard: React.FC = () => {
+
+const QaDashboard: React.FC = () => {
   const { toast } = useToast();
-  const [data, setData] = useState<ProductionItem[]>([]);
+  const [data, setData] = useState<QaItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  // unified view controller: "list" | "detail" | "form"
   const [view, setView] = useState<"list" | "detail" | "form">("list");
-  const [selectedItem, setSelectedItem] = useState<ProductionItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<QaItem | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -24,13 +27,12 @@ const Role2Dashboard: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/get_product_details`);
-      if (!response.ok) throw new Error("Failed to fetch product details");
-      const result = await response.json();
+      const result = await fetchJSON<QaItem[]>(`${API_URL}/api/get_full_products`);
       setData(result);
     } catch (err: unknown) {
       console.error("❌ Error fetching product details:", err);
-      if (err instanceof Error) setError(err.message);
+      const errorMessage = err instanceof Error ? err.message : "Unknown error";
+      setError(errorMessage);
       toast({
         variant: "destructive",
         title: "Error loading data",
@@ -46,14 +48,12 @@ const Role2Dashboard: React.FC = () => {
   }, [fetchData]);
 
   // Navigation Handlers
-  const handleViewDetail = (item: ProductionItem) => {
+  const handleViewDetail = (item: QaItem) => {
     setSelectedItem(item);
     setView("detail");
   };
 
-  const handleProceedToForm = () => {
-    setView("form");
-  };
+  const handleProceedToForm = () => setView("form");
 
   const handleBack = () => {
     setSelectedItem(null);
@@ -89,41 +89,38 @@ const Role2Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="bg-slate-50 p-4 sm:p-6 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4">
+      <div className="max-w-8xl mx-auto">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-slate-800 mb-6 sm:mb-8">
-          PLANNING AND PRODUCTION TRACKING
+          Quality Verification Sheet
         </h1>
 
-        <Card className="overflow-hidden shadow-lg rounded-2xl">
+        <Card className="border-none shadow-none">
           <CardContent className="p-0">
             {/* ---------------------- LIST VIEW ---------------------- */}
             {view === "list" && (
-              <div className="overflow-x-auto">
-                <ProductionTable data={data} onView={handleViewDetail} />
-              </div>
+              <QaList data={data} onView={handleViewDetail} />
             )}
 
             {/* --------------------- DETAIL VIEW --------------------- */}
             {view === "detail" && selectedItem && (
-              <div className="p-4 sm:p-6">
-                <SerialDetail
-                  item={selectedItem}
-                  onBack={handleBack}
-                  onProceed={handleProceedToForm}
-                />
-              </div>
+              <SerialDetail
+                item={selectedItem}
+                onBack={handleBack}
+                onProceed={handleProceedToForm}
+              />
             )}
 
             {/* ---------------------- FORM VIEW ---------------------- */}
             {view === "form" && selectedItem && (
-              <div className="p-4 sm:p-6">
-                <AddQAForm
-                  item={selectedItem}
-                  onBack={handleBack}
-                  onSuccess={handleFormSuccess}
-                />
-              </div>
+              <QaFormWrapper
+                item={{
+                  id: selectedItem.id,
+                  serial_number: selectedItem.serial_number,
+                }}
+                onBack={handleBack}
+                onSuccess={handleFormSuccess}
+              />
             )}
           </CardContent>
         </Card>
@@ -133,4 +130,4 @@ const Role2Dashboard: React.FC = () => {
   );
 };
 
-export default Role2Dashboard;
+export default QaDashboard;

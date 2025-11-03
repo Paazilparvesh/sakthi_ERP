@@ -19,51 +19,56 @@ interface ProcessDetail {
     operatorName: string;
     remakers: string;
 }
+
+interface ProductId {
+    id: number,
+    serial_number: string,
+}
 interface ProcessScheduleFormProps {
-    product: Product;
+    product: ProductId;
     onBack: () => void;
     onSuccess: () => void;
 }
 
 
-// -----------------------
-// Progress Stepper
-// -----------------------
-const ProgressStepper = ({ currentStep }: { currentStep: number }) => {
-    const steps = ["Schedule", "Process Detail", "Confirm & Submit"];
-    return (
-        <div className="flex justify-center items-center mb-8">
-            {steps.map((step, index) => (
-                <React.Fragment key={index}>
-                    <div className="flex flex-col items-center">
-                        <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${currentStep > index + 1 || currentStep === index + 1
-                                ? "bg-blue-600 text-white"
-                                : "bg-slate-200 text-slate-500"
-                                }`}
-                        >
-                            {currentStep > index + 1 ? "✔" : index + 1}
-                        </div>
-                        <p
-                            className={`mt-2 text-xs text-center ${currentStep >= index + 1
-                                ? "text-blue-600 font-semibold"
-                                : "text-slate-500"
-                                }`}
-                        >
-                            {step}
-                        </p>
-                    </div>
-                    {index < steps.length - 1 && (
-                        <div
-                            className={`flex-auto border-t-2 mx-4 ${currentStep > index + 1 ? "border-blue-600" : "border-slate-200"
-                                }`}
-                        ></div>
-                    )}
-                </React.Fragment>
-            ))}
-        </div>
-    );
-};
+// // -----------------------
+// // Progress Stepper
+// // -----------------------
+// const ProgressStepper = ({ currentStep }: { currentStep: number }) => {
+//     const steps = ["Schedule", "Process Detail", "Confirm & Submit"];
+//     return (
+//         <div className="flex justify-center items-center mb-8">
+//             {steps.map((step, index) => (
+//                 <React.Fragment key={index}>
+//                     <div className="flex flex-col items-center">
+//                         <div
+//                             className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${currentStep > index + 1 || currentStep === index + 1
+//                                 ? "bg-blue-600 text-white"
+//                                 : "bg-slate-200 text-slate-500"
+//                                 }`}
+//                         >
+//                             {currentStep > index + 1 ? "✔" : index + 1}
+//                         </div>
+//                         <p
+//                             className={`mt-2 text-xs text-center ${currentStep >= index + 1
+//                                 ? "text-blue-600 font-semibold"
+//                                 : "text-slate-500"
+//                                 }`}
+//                         >
+//                             {step}
+//                         </p>
+//                     </div>
+//                     {index < steps.length - 1 && (
+//                         <div
+//                             className={`flex-auto border-t-2 mx-4 ${currentStep > index + 1 ? "border-blue-600" : "border-slate-200"
+//                                 }`}
+//                         ></div>
+//                     )}
+//                 </React.Fragment>
+//             ))}
+//         </div>
+//     );
+// };
 
 // -----------------------
 // ProcessScheduleForm Component
@@ -119,42 +124,42 @@ export const ProcessScheduleForm: React.FC<ProcessScheduleFormProps> = ({
     };
 
     const validateProcess = (processData: ProcessDetail[]) => {
-  const numberPattern = /^[0-9]+$/; // Only digits
-  const textPattern = /^[a-zA-Z0-9\s.,'-]+$/; // ✅ Letters, numbers, spaces, dots, commas, hyphen, apostrophe
+        const numberPattern = /^[0-9]+$/; // Only digits
+        const textPattern = /^[a-zA-Z0-9\s.,'-]+$/; // ✅ Letters, numbers, spaces, dots, commas, hyphen, apostrophe
 
-  for (const row of processData) {
-    if (!row.processDate.trim()) {
-      return { valid: false, msg: `Process date is required for ${row.processName}.` };
-    }
+        for (const row of processData) {
+            if (!row.processDate.trim()) {
+                return { valid: false, msg: `Process date is required for ${row.processName}.` };
+            }
 
-    if (!row.cycleTime.trim()) {
-      return { valid: false, msg: `Cycle time is required for ${row.processName}.` };
-    }
+            if (!row.cycleTime.trim()) {
+                return { valid: false, msg: `Cycle time is required for ${row.processName}.` };
+            }
 
-    if (!numberPattern.test(row.cycleTime)) {
-      return { valid: false, msg: `Cycle time must be numeric for ${row.processName}.` };
-    }
+            if (!numberPattern.test(row.cycleTime)) {
+                return { valid: false, msg: `Cycle time must be numeric for ${row.processName}.` };
+            }
 
-    const cycleMinutes = parseInt(row.cycleTime, 10);
-    if (cycleMinutes <= 0 || cycleMinutes > 600) {
-      return { valid: false, msg: `Cycle time for ${row.processName} must be between 1 and 600 minutes.` };
-    }
+            const cycleMinutes = parseInt(row.cycleTime, 10);
+            if (cycleMinutes <= 0 || cycleMinutes > 600) {
+                return { valid: false, msg: `Cycle time for ${row.processName} must be between 1 and 600 minutes.` };
+            }
 
-    if (!row.operatorName.trim()) {
-      return { valid: false, msg: `Operator name is required for ${row.processName}.` };
-    }
+            if (!row.operatorName.trim()) {
+                return { valid: false, msg: `Operator name is required for ${row.processName}.` };
+            }
 
-    if (!textPattern.test(row.operatorName)) {
-      return { valid: false, msg: `Operator name contains invalid characters for ${row.processName}.` };
-    }
+            if (!textPattern.test(row.operatorName)) {
+                return { valid: false, msg: `Operator name contains invalid characters for ${row.processName}.` };
+            }
 
-    if (row.remakers && !textPattern.test(row.remakers)) {
-      return { valid: false, msg: `Remarks contain invalid characters for ${row.processName}.` };
-    }
-  }
+            if (row.remakers && !textPattern.test(row.remakers)) {
+                return { valid: false, msg: `Remarks contain invalid characters for ${row.processName}.` };
+            }
+        }
 
-  return { valid: true };
-};
+        return { valid: true };
+    };
 
 
     const handleProcessChange = (index: number, field: keyof ProcessDetail, value: string) => {
@@ -166,127 +171,6 @@ export const ProcessScheduleForm: React.FC<ProcessScheduleFormProps> = ({
     const handleScheduleChange = (field: keyof ScheduleDetail, value: string) => {
         setScheduleData((prev) => ({ ...prev, [field]: value }));
     };
-
-    //     const handleSubmit = async () => {
-    //     try {
-    //         // -----------------------
-    //         // 1️⃣ Validate Schedule
-    //         // -----------------------
-    //         const scheduleValidation = validateSchedule(scheduleData);
-    //         if (!scheduleValidation.valid) {
-    //             toast({
-    //                 variant: "destructive",
-    //                 title: "Validation Error",
-    //                 description: scheduleValidation.msg,
-    //             });
-    //             return;
-    //         }
-
-    //         // -----------------------
-    //         // 2️⃣ Validate Process Data
-    //         // -----------------------
-    //         const processValidation = validateProcess(processData);
-    //         if (!processValidation.valid) {
-    //             toast({
-    //                 variant: "destructive",
-    //                 title: "Validation Error",
-    //                 description: processValidation.msg,
-    //             });
-    //             return;
-    //         }
-
-    //         // -----------------------
-    //         // 3️⃣ Send Schedule to Backend
-    //         // -----------------------
-    //         const schedulePayload = {
-    //             commitment_date: scheduleData.commitmentDate,
-    //             planning_date: scheduleData.planningDate,
-    //             date_of_inspection: scheduleData.inspectionDate,
-    //             date_of_delivery: scheduleData.deliveryDate,
-    //         };
-
-    //         const scheduleResponse = await fetch(`${BASE_URL}/api/Schedule_add/`, {
-    //             method: "POST",
-    //             headers: { "Content-Type": "application/json" },
-    //             body: JSON.stringify(schedulePayload),
-    //         });
-
-    //         if (!scheduleResponse.ok) {
-    //             const err = await scheduleResponse.json();
-    //             throw new Error(err.error || "Failed to create schedule");
-    //         }
-
-    //         toast({ title: "Schedule created", description: "Fetching schedule ID..." });
-
-    //         // -----------------------
-    //         // 4️⃣ Wait 2 seconds and fetch latest schedule
-    //         // -----------------------
-    //         await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    //         const schedulesResponse = await fetch(`${BASE_URL}/api/Schedule_view/`);
-    //         const schedulesResult = await schedulesResponse.json();
-
-    //         if (!schedulesResponse.ok || !schedulesResult.schedules?.length) {
-    //             throw new Error("Failed to fetch schedule ID");
-    //         }
-
-    //         const latestSchedule = schedulesResult.schedules[schedulesResult.schedules.length - 1];
-    //         const scheduleId = latestSchedule.schedule_id;
-
-    //         console.log("✅ Fetched schedule ID:", scheduleId);
-
-    //         // -----------------------
-    //         // 5️⃣ Fetch product from QA
-    //         // -----------------------
-    //         const productQAResponse = await fetch(`${BASE_URL}/api/product_qa_view/`);
-    //         const productQAResult = await productQAResponse.json();
-
-    //         if (!productQAResponse.ok || !productQAResult.qa?.length) {
-    //             throw new Error("No QA products found");
-    //         }
-
-    //         // Assuming you want the first product in QA array
-    //         const qaProduct = productQAResult.qa[0];
-    //         const qaProductId = qaProduct.product_id;
-
-    //         console.log("✅ QA Product ID:", qaProductId);
-
-    //         // -----------------------
-    //         // 6️⃣ Send process details to backend
-    //         // -----------------------
-    //         for (const p of processData) {
-    //             const processPayload = {
-    //                 schedule_name: scheduleId,
-    //                 process_date: p.processDate,
-    //                 cycle_time: formatCycleTime(p.cycleTime),
-    //                 operator_name: p.operatorName,
-    //                 remark: p.remakers,
-    //             };
-
-    //             const processResponse = await fetch(`${BASE_URL}/api/Schedule_process/`, {
-    //                 method: "POST",
-    //                 headers: { "Content-Type": "application/json" },
-    //                 body: JSON.stringify(processPayload),
-    //             });
-
-    //             if (!processResponse.ok) {
-    //                 const err = await processResponse.json();
-    //                 throw new Error(err.error || `Failed to create process for ${p.processName}`);
-    //             }
-    //         }
-
-    //         toast({ title: "✅ Success", description: "Schedule and process saved successfully" });
-    //         onSuccess();
-
-    //     } catch (error) {
-    //         console.error(error);
-    //         toast({
-    //             variant: "destructive",
-    //             title: "Error",
-    //             description: error instanceof Error ? error.message : "Unknown error",
-    //         });
-    //     }
-    // };
 
     const handleSubmit = async () => {
         try {
@@ -458,7 +342,7 @@ export const ProcessScheduleForm: React.FC<ProcessScheduleFormProps> = ({
                 <Button onClick={onBack} variant="outline">Back</Button>
             </div>
 
-            <ProgressStepper currentStep={step} />
+            {/* <ProgressStepper currentStep={step} /> */}
 
             {/* Step 1: Schedule */}
             {step === 1 && (

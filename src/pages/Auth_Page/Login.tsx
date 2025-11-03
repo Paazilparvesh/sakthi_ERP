@@ -23,7 +23,7 @@ import {
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [roleType, setRoleType] = useState("role1");
+  const [roleType, setRoleType] = useState("inward");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,6 +60,7 @@ const Login: React.FC = () => {
       const success = await login(username, password, roleType as UserRole);
 
       if (success) {
+        localStorage.setItem("username", username);
         toast({
           title: "Success",
           description: "Login successful!",
@@ -149,11 +150,10 @@ const Login: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value="role1">Inward</option>
+                <option value="inward">Inward</option>
                 <option value="QA">QA</option>
-                <option value="product">Product</option>
                 <option value="Admin">Admin</option>
-                <option value="accountent">Accountent</option>
+                <option value="accountent">Outward</option>
               </select>
             </div>
 

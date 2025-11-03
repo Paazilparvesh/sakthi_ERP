@@ -7,10 +7,9 @@ import { UserRole } from "@/types/user.type";
 // Base Layout
 import BaseLayout from "@/layouts/BaseLayout";
 // Role-specific dashboards
-import Role1Dashboard from "@/pages/Dashboard_Page/Role1Dashboard";
-import Role2Dashboard from "@/pages/Dashboard_Page/Role2Dashboard";
-import Role3Dashboard from "@/pages/Dashboard_Page/Role3Dashboard";
-import Role4Dashboard from "@/pages/Dashboard_Page/Role4Dashboard";
+import Role1Dashboard from "@/pages/Dashboard_Page/InwardDashboard";
+import Role2Dashboard from "@/pages/Dashboard_Page/QaDashboard";
+import Role4Dashboard from "@/pages/Dashboard_Page/OutWardDashboard";
 import AdminDashboard from "@/pages/Admin_Pages/AdminDashboard";
 // UI Components
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -22,9 +21,8 @@ const Dashboard: React.FC = () => {
   // Map roles to their dashboards
   const dashboardMap: Record<UserRole, React.ReactNode> = useMemo(
     () => ({
-      role1: <Role1Dashboard />,
+      inward: <Role1Dashboard />,
       QA: <Role2Dashboard />,
-      product: <Role3Dashboard />,
       accountent: <Role4Dashboard />,
       Admin: <AdminDashboard />,
     }),

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { Console } from "console";
 
 interface Product {
   product_id: number;
@@ -41,6 +42,22 @@ export const AddProcessForm: React.FC<AddProcessFormProps> = ({
   const [approvedBy, setApprovedBy] = useState("");
   const [remarks, setRemarks] = useState("");
   const [loading, setLoading] = useState(false);
+
+
+
+  useEffect(() => {
+    // ✅ Fetch user data from localStorage
+    const storedUser = localStorage.getItem("username");
+    console.log(storedUser)
+
+    if (storedUser) {
+      try {
+        setApprovedBy(storedUser);
+      } catch (err) {
+        console.error("Error parsing user from localStorage:", err);
+      }
+    }
+  }, []);
 
   // ✅ Validation
   const validateFields = (): string | null => {
@@ -87,8 +104,8 @@ export const AddProcessForm: React.FC<AddProcessFormProps> = ({
       }
 
       const payload = {
-        product_id: productId,
-        inv_on: invoiceNumber,
+        product_details: productId,
+        inv_no: invoiceNumber,
         Date: invoiceDate,
         Amount: amount,
         mode_of_pay: modeOfPay,
@@ -97,12 +114,13 @@ export const AddProcessForm: React.FC<AddProcessFormProps> = ({
         process_plan: plannedBy,
         process_approve: approvedBy,
         remark: remarks,
+        created_by: approvedBy,
       };
 
       console.log("payload", payload)
 
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/add_account/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/add_account_new/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -118,7 +136,7 @@ export const AddProcessForm: React.FC<AddProcessFormProps> = ({
         // onSuccess();
         onClose();
         onBack(); // ✅ navigate back
-        
+
       } else {
         toast({
           title: "Error",
@@ -160,22 +178,69 @@ export const AddProcessForm: React.FC<AddProcessFormProps> = ({
             onChange={(e) => setInvoiceDate(e.target.value)}
           />
         </div>
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium mb-1">Amount</label>
           <Input
             placeholder="Enter Amount"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
-        </div>
+        </div> */}
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+          <Input
+            type="number"
+            placeholder="Enter Amount"
+            value={amount}
+            onChange={(e) => {
+              const value = e.target.value;
+              // ✅ Allow only positive numbers (no alphabets, no symbols)
+              if (/^\d*\.?\d*$/.test(value)) {
+                setAmount(value);
+              }
+            }}
+            min="0"
+            step="0.01" // ✅ allows decimals like 100.50
+            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          />
+        </div>
+
+        {/* <div>
           <label className="block text-sm font-medium mb-1">Mode of Payment</label>
           <Input
             placeholder="Enter Mode of Payment"
             value={modeOfPay}
             onChange={(e) => setModeOfPay(e.target.value)}
           />
+          <select name="" id="">
+            <option>Cash</option>
+            <option>Cheque</option>
+            <option>Bank Transfer</option>
+            <option>Online Transaction</option>
+          </select>
+        </div> */}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Mode of Payment
+          </label>
+          <div className="flex items-center gap-2">
+            {/* Dropdown for selecting mode */}
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-white text-gray-800 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              value={modeOfPay}
+              onChange={(e) => setModeOfPay(e.target.value)}
+            >
+              <option value="">Select Mode</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Online Transaction">Online Transaction</option>
+            </select>
+          </div>
         </div>
+
+
       </div>
 
       {/* Second Row - Editable Process Info */}
@@ -208,8 +273,8 @@ export const AddProcessForm: React.FC<AddProcessFormProps> = ({
           <label className="block text-sm font-medium mb-1">Process Approved By</label>
           <Input
             value={approvedBy}
-            onChange={(e) => setApprovedBy(e.target.value)}
-            className="bg-white"
+            readOnly
+            className="bg-gray-100 cursor-not-allowed"
           />
         </div>
       </div>
