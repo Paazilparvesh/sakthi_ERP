@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { SerialDetailProps, Material, QAData } from "@/types/qa.type";
+import { ProgramerDetailProps, QAData } from "@/types/qa.type";
+import { Material } from "@/types/inward.type";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
 
@@ -29,8 +30,8 @@ const renderFieldCard = (label: string, value: string | number, isStatus?: boole
   );
 }
 
-const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
-  const [qaData, setQaData] = useState<QAData | null>(null);
+const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item, onBack, onProceed }) => {
+  const [formData, setFormData] = useState<QAData | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -41,24 +42,35 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
     const fetchQAData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_URL}/api/get_QA/`);
+        const response = await fetch(`${API_URL}/api/get_programer_Details/`);
         const data = await response.json();
 
         if (!response.ok) throw new Error(data.error || "Failed to fetch QA data");
 
         // ✅ Find matching product by ID
-        const matched = data.find((d: QAData) => d.product_id === item.id);
-        console.log("Data:", matched)
-        if (matched) {
-          setQaData(matched);
+        const matched = data.find((dat) => {
+          // Case 1: product_details is an object with .id
+          if (typeof dat.product_details === "object" && dat.product_details !== null) {
+            return dat.product_details.id === item.id;
+          }
+          // Case 2: product_details is just an ID number
+          return dat.product_details === item.id;
+        });
+        if (item.status?.toLowerCase() === "completed") {
+          if (matched) {
+            setFormData(matched);
+          } else {
+            toast({
+              title: "No programmer record found",
+              description: `No programmer data linked with product ID: ${item.id}.`,
+              variant: "destructive",
+            });
+          }
         } else {
-          toast({
-            title: "No matching data found",
-            description: `No QA records found for product ID: ${item.id}`,
-            variant: "destructive",
-          });
+          console.log()
         }
-      } catch (error: any) {
+
+      } catch (error) {
         console.error("❌ Error fetching QA:", error);
         toast({
           title: "Error fetching QA data",
@@ -71,21 +83,19 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
     };
 
     fetchQAData();
-  }, [item.id, toast, API_URL]);
+  }, [item.id, toast, API_URL, item.status]);
 
 
-
-  console.log(item)
   const materials: Material[] = item.materials || [];
 
-  const statusValidation = item.status?.toLowerCase() === "pending" && onProceed;
+  // const statusValidation = item.status?.toLowerCase() === "pending" && onProceed;
 
 
   return (
-    <Card className="shadow-lg p-4 sm:p-6 md:p-8 mx-auto w-full">
+    <Card className="  p-4 sm:p-6 md:p-8 mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Serial Number Details</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Product Details</h2>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {item.status?.toLowerCase() === "pending" && onProceed && (
             <button
@@ -109,68 +119,87 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
         <p className="text-center text-gray-500 italic">Loading QA details...</p>
       ) : (
         <>
-          {/* Product Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* --- Product Information Section --- */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Left Column */}
             <div className="space-y-4">
               {renderFieldCard("Serial Number", item.serial_number)}
               {renderFieldCard("Company Name", item.Company_name)}
-              {renderFieldCard("Customer DC No.", item.Customer_No)}
-              {renderFieldCard("Mobile Number", item.mobile)}
+              {renderFieldCard("Mobile", item.mobile)}
+              {renderFieldCard("TEC", item.tec || "-")}
             </div>
 
+            {/* Middle Column */}
             <div className="space-y-4">
               {renderFieldCard("Date", item.date || "-")}
               {renderFieldCard("Customer Name", item.Customer_name)}
-              {renderFieldCard("Customer DC Date", item.Customer_date)}
+              {renderFieldCard("Work Order No", item.wo_no || "-")}
+              {renderFieldCard("Created By", item.created_by || "-")}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              {renderFieldCard("Inward Slip No.", item.inward_slip_number || "-")}
+              {renderFieldCard("Customer No.", item.Customer_No)}
+              {renderFieldCard("Ratio", item.ratio || "-")}
               {renderFieldCard("Status", item.status, true)}
             </div>
           </div>
 
-          {/* Materials Table */}
+          {/* --- Product Materials Section --- */}
           {materials.length > 0 && (
-            <>
-              <div className="mt-10 space-y-4">
-                <h3 className="text-xl font-semibold text-gray-700">Product Materials</h3>
-                <div className=" overflow-x-auto rounded-xl border border-gray-300 shadow-sm">
-                  <table className="w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden">
-                    <thead className="bg-gray-100 text-gray-700 font-semibold">
-                      <tr>
-                        <th className="border px-2 py-2">S.No</th>
-                        <th className="border px-2 py-2">Material (L × W × H)</th>
-                        <th className="border px-2 py-2">Volume</th>
-                        <th className="border px-2 py-2">Quantity</th>
-                        <th className="border px-2 py-2">Remarks</th>
+            <section className="mt-10 space-y-4">
+              <h3 className="text-xl font-semibold text-gray-700">Product Materials</h3>
+              <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-sm">
+                <table className="w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden">
+                  <thead className="bg-gray-100 text-gray-700 font-semibold">
+                    <tr>
+                      <th className="border px-2 py-2">S.No</th>
+                      <th className="border px-2 py-2">Material Type</th>
+                      <th className="border px-2 py-2">Material Grade</th>
+                      <th className="border px-2 py-2">Thick (mm)</th>
+                      <th className="border px-2 py-2">Width (mm)</th>
+                      <th className="border px-2 py-2">Length (mm)</th>
+                      <th className="border px-2 py-2">Unit Weight (kg)</th>
+                      <th className="border px-2 py-2">Density</th>
+                      <th className="border px-2 py-2">Quantity</th>
+                      <th className="border px-2 py-2">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materials.map((mat, index) => (
+                      <tr
+                        key={mat.id || index}
+                        className="hover:bg-gray-50 transition-colors text-gray-800"
+                      >
+                        <td className="border px-2 py-2 font-medium">{index + 1}</td>
+                        <td className="border px-2 py-2">{mat.mat_type || "-"}</td>
+                        <td className="border px-2 py-2">{mat.mat_grade || "-"}</td>
+                        <td className="border px-2 py-2">{mat.Thick ?? "-"}</td>
+                        <td className="border px-2 py-2">{mat.Width ?? "-"}</td>
+                        <td className="border px-2 py-2">{mat.Length ?? "-"}</td>
+                        <td className="border px-2 py-2">{mat.UnitWeight ?? "-"}</td>
+                        <td className="border px-2 py-2">{mat.Density ?? "-"}</td>
+                        <td className="border px-2 py-2">{mat.Quantity ?? "-"}</td>
+                        <td className="border px-2 py-2">{mat.Remarks || "—"}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {materials.map((mat, i) => (
-                        <tr key={mat.id} className="hover:bg-gray-50 transition-colors text-gray-800">
-                          <td className="border px-2 py-2 font-medium">{i + 1}</td>
-                          <td className="border px-2 py-2">
-                            {mat.Length} × {mat.Breadth} × {mat.Height}
-                          </td>
-                          <td className="border px-2 py-2">{mat.Result}</td>
-                          <td className="border px-2 py-2">{mat.Quantity}</td>
-                          <td className="border px-2 py-2">{mat.Remarks || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </>
+            </section>
           )}
 
           {/* QA Data (Product Options, Plan, Schedule) */}
-          {!statusValidation && qaData && (
+          {/* {!statusValidation && formData && (
             <div className="mt-10 space-y-8">
-              {/* Product Options */}
+              {/* Product Options 
               <section>
                 <h3 className="text-xl font-semibold mb-3 text-gray-700">Product Options</h3>
 
-                {qaData.product_options && qaData.product_options.length > 0 ? (
+                {formData.product_options && formData.product_options.length > 0 ? (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.entries(qaData.product_options[0]).map(([key, value]) => {
+                    {Object.entries(formData.product_options[0]).map(([key, value]) => {
                       if (key === "id") return null; // Skip id field
                       const isTrue = Boolean(value);
 
@@ -201,19 +230,19 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
 
               <Separator />
 
-              {/* Plan Products */}
+              {/* Plan Products 
               <section>
                 <h3 className="text-xl font-semibold mb-3 text-gray-700">Plan Products</h3>
 
-                {qaData.plan_products && qaData.plan_products.length > 0 ? (
+                {formData.plan_products && formData.plan_products.length > 0 ? (
                   <div className="space-y-6">
-                    {qaData.plan_products.map((plan, index) => (
+                    {formData.plan_products.map((plan, index) => (
                       <Card
                         key={index}
                         className="border shadow-sm hover:shadow-md transition-all p-4"
                       >
                         <CardContent>
-                          {/* --- Top Info --- */}
+                          {/* --- Top Info --- 
                           <div className="flex flex-wrap justify-between items-center mb-4">
                             <div className="flex justify-center items-center">
                               <p className="text-gray-500 text-sm font-medium mr-2">
@@ -233,7 +262,7 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
                             </span>
                           </div>
 
-                          {/* --- Coating Section --- */}
+                          {/* --- Coating Section --- 
                           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {Object.entries(plan)
                               .filter(
@@ -272,20 +301,20 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
 
               <Separator />
 
-              {/* Schedules */}
+              {/* Schedules 
               <section>
                 <h3 className="text-xl font-semibold mb-3 text-gray-700">Schedules</h3>
 
-                {qaData.schedules && qaData.schedules.length > 0 ? (
+                {formData.schedules && formData.schedules.length > 0 ? (
                   <div className="space-y-4">
-                    {qaData.schedules.map((schedule, index) => (
+                    {formData.schedules.map((schedule, index) => (
                       <Card
                         key={index}
                         className="border shadow-sm hover:shadow-md transition-all rounded-xl w-full"
                       >
                         <CardContent className="p-6 w-full">
 
-                          {/* 2-Column Grid */}
+                          {/* 2-Column Grid 
                           <div className="grid sm:grid-cols-2 grid-rows-1 gap-x-6 gap-y-4">
                             {Object.entries(schedule).map(([key, val]) => {
                               if (["id", "schedule_id", "product_plan", "status"].includes(key))
@@ -317,16 +346,16 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
 
               <Separator />
 
-              {/* Schedule Processes */}
+              {/* Schedule Processes 
               <section>
                 <h3 className="text-xl font-semibold mb-3 text-gray-700">Schedule Processes</h3>
-                {qaData.schedule_processes?.length ? (
+                {formData.schedule_processes?.length ? (
                   <div className="overflow-x-auto border rounded-lg shadow-sm">
                     <table className="w-full text-sm text-gray-800">
                       <thead className="bg-gray-100">
                         <tr>
                           <th className="border px-3 py-2 text-left font-semibold">Schedule Name</th>
-                          {Object.keys(qaData.schedule_processes[0])
+                          {Object.keys(formData.schedule_processes[0])
                             .filter(
                               (key) =>
                                 !["id", "schedule_id", "status", "product_plan", "schedule_name"].includes(
@@ -341,7 +370,7 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
                         </tr>
                       </thead>
                       <tbody>
-                        {qaData.schedule_processes.map((row, index) => {
+                        {formData.schedule_processes.map((row, index) => {
                           const scheduleNames = ["Laser", "Folding", "Forming"];
                           const scheduleName = scheduleNames[index] || `Process ${index + 1}`;
                           return (
@@ -374,7 +403,31 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
 
 
             </div>
+          )} */}
+
+          {/* ✅ NEW — Show Programmer Details when status = completed */}
+          {item.status?.toLowerCase() === "completed" && formData && (
+            <section className="mt-10">
+              <Separator />
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4 mt-10">Programmer Details</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(formData).map(([key, value]) => {
+                  if (["id", "product_details"].includes(key)) return null;
+                  return (
+                    <React.Fragment key={key}>
+                      {renderFieldCard(
+                        key.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+                        value
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+
+              </div>
+            </section>
           )}
+
         </>
       )}
     </Card>
@@ -382,4 +435,4 @@ const QaDetail: React.FC<SerialDetailProps> = ({ item, onBack, onProceed }) => {
 };
 
 
-export default QaDetail;
+export default ProgramerDetail;

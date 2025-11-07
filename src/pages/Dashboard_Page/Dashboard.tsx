@@ -7,9 +7,9 @@ import { UserRole } from "@/types/user.type";
 // Base Layout
 import BaseLayout from "@/layouts/BaseLayout";
 // Role-specific dashboards
-import Role1Dashboard from "@/pages/Dashboard_Page/InwardDashboard";
-import Role2Dashboard from "@/pages/Dashboard_Page/QaDashboard";
-import Role4Dashboard from "@/pages/Dashboard_Page/OutWardDashboard";
+import InwardDashboard from "@/pages/Dashboard_Page/InwardDashboard";
+import ProgramerDashboard from "@/pages/Dashboard_Page/ProgramerDashboard";
+import OutwardDashboard from "@/pages/Dashboard_Page/OutWardDashboard";
 import AdminDashboard from "@/pages/Admin_Pages/AdminDashboard";
 // UI Components
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
@@ -21,10 +21,11 @@ const Dashboard: React.FC = () => {
   // Map roles to their dashboards
   const dashboardMap: Record<UserRole, React.ReactNode> = useMemo(
     () => ({
-      inward: <Role1Dashboard />,
-      QA: <Role2Dashboard />,
-      accountent: <Role4Dashboard />,
-      Admin: <AdminDashboard />,
+      inward: <InwardDashboard />,
+      programer: <ProgramerDashboard />,
+      qa: <OutwardDashboard role="qa" />,
+      accountent: <OutwardDashboard role="accountent" />,
+      admin: <AdminDashboard />,
     }),
     []
   );
@@ -52,7 +53,10 @@ const Dashboard: React.FC = () => {
       );
     }
 
-    const dashboard = dashboardMap[user.role_type as UserRole];
+    // const dashboard = dashboardMap[user.role_type as UserRole];
+    const normalizedRole = user?.role_type?.toLowerCase() as UserRole;
+    const dashboard = dashboardMap[normalizedRole];
+
 
     if (!dashboard) {
       return (

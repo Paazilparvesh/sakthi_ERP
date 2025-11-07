@@ -1,21 +1,37 @@
-export interface InwardFormType {
-  Company_name: string;
+export interface ProductType {
+  id: number;
   serial_number: string;
-  date: string; // YYYY-MM-DD format
+  date: string;
+  inward_slip_number: string;
+  ratio: string;
+  wo_no: string;
+  tec: string;
+  Company_name: string;
   Customer_name: string;
   Customer_No: string;
-  Customer_date: string; // YYYY-MM-DD format
-  Quantity: (number | string)[]; // array of quantities
   mobile: string;
-  Remarks: string[]; // array of remarks
   Test_Certificate: boolean;
-  status: string; // e.g., "pending"
-  // 🔹 New fields for calculations
-  Length?: (number | string)[];
-  Breadth?: (number | string)[];
-  Height?: (number | string)[];
-  Volume?: (number | string)[];
+  status: string;
+  outward_status: string;
+  qa_status: string;
+  created_by?: string;
+  materials: Material[];
 }
+
+export interface Material {
+  id?: number;
+  Thick: number | string;
+  Width: number | string;
+  Length: number | string;
+  UnitWeight: number | string;
+  Density: number | string;
+  Quantity: number | string;
+  mat_type: string;
+  mat_grade: string;
+  Remarks: string;
+}
+
+
 
 export interface Company {
   id: number;
@@ -27,28 +43,7 @@ export interface Company {
   customer_DC_No: string;
 }
 
-export interface AddProductResponse {
-  msg: string;
-  Company_name: string;
-  serial_number: string;
-  date: string;
-  Customer_name: string;
-  Customer_No: string;
-  Customer_date: string;
-  material_Description: string[];
-  Quantity: number[];
-  mobile: string;
-  Remarks: string[];
-  size: boolean;
-  Thick: boolean;
-  Grade: boolean;
-  Drawing: boolean;
-  Test_Certificate: boolean;
-  status: string;
-}
-
-
 export interface InwardProps {
-  formData: InwardFormType;
-  setFormData: React.Dispatch<React.SetStateAction<InwardFormType>>;
+  formData: ProductType;
+  setFormData: React.Dispatch<React.SetStateAction<ProductType>>;
 }

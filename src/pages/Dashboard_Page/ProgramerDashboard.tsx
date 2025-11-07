@@ -4,21 +4,21 @@ import { useToast } from "@/components/ui/use-toast";
 import { fetchJSON } from "@/utils/api"; // ✅ import the reusable API utility
 
 // Types
-import { QaItem } from "@/types/qa.type";
+import { ProductType } from "@/types/inward.type";
 
 // Components
-import QaList from "@/components/QaComponents/QaList";
-import SerialDetail from "@/components/QaComponents/QaDetail";
-import QaFormWrapper from "@/components/QaComponents/QaFormWrapper";
+import ProgramList from "@/components/ProgramerComponents/ProgramerList";
+import ProgramDetail from "@/components/ProgramerComponents/ProgramerDetail";
+import ProgramerFormWrapper from "@/components/ProgramerComponents/ProgramerForm";
 
 
-const QaDashboard: React.FC = () => {
+const ProgramerDashboard: React.FC = () => {
   const { toast } = useToast();
-  const [data, setData] = useState<QaItem[]>([]);
+  const [FormData, setFormData] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "detail" | "form">("list");
-  const [selectedItem, setSelectedItem] = useState<QaItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ProductType | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -27,8 +27,8 @@ const QaDashboard: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await fetchJSON<QaItem[]>(`${API_URL}/api/get_full_products`);
-      setData(result);
+      const result = await fetchJSON<ProductType[]>(`${API_URL}/api/get_full_products`);
+      setFormData(result);
     } catch (err: unknown) {
       console.error("❌ Error fetching product details:", err);
       const errorMessage = err instanceof Error ? err.message : "Unknown error";
@@ -48,7 +48,7 @@ const QaDashboard: React.FC = () => {
   }, [fetchData]);
 
   // Navigation Handlers
-  const handleViewDetail = (item: QaItem) => {
+  const handleViewDetail = (item: ProductType) => {
     setSelectedItem(item);
     setView("detail");
   };
@@ -92,19 +92,19 @@ const QaDashboard: React.FC = () => {
     <div className="p-4">
       <div className="max-w-8xl mx-auto">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-slate-800 mb-6 sm:mb-8">
-          Quality Verification Sheet
+          Programer Sheet
         </h1>
 
         <Card className="border-none shadow-none">
           <CardContent className="p-0">
             {/* ---------------------- LIST VIEW ---------------------- */}
             {view === "list" && (
-              <QaList data={data} onView={handleViewDetail} />
+              <ProgramList data={FormData} onView={handleViewDetail} />
             )}
 
             {/* --------------------- DETAIL VIEW --------------------- */}
             {view === "detail" && selectedItem && (
-              <SerialDetail
+              <ProgramDetail
                 item={selectedItem}
                 onBack={handleBack}
                 onProceed={handleProceedToForm}
@@ -113,11 +113,8 @@ const QaDashboard: React.FC = () => {
 
             {/* ---------------------- FORM VIEW ---------------------- */}
             {view === "form" && selectedItem && (
-              <QaFormWrapper
-                item={{
-                  id: selectedItem.id,
-                  serial_number: selectedItem.serial_number,
-                }}
+              <ProgramerFormWrapper
+                item={selectedItem.id}
                 onBack={handleBack}
                 onSuccess={handleFormSuccess}
               />
@@ -130,4 +127,4 @@ const QaDashboard: React.FC = () => {
   );
 };
 
-export default QaDashboard;
+export default ProgramerDashboard;

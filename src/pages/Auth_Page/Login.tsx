@@ -61,6 +61,7 @@ const Login: React.FC = () => {
 
       if (success) {
         localStorage.setItem("username", username);
+        localStorage.setItem("Role_Type", roleType);
         toast({
           title: "Success",
           description: "Login successful!",
@@ -151,9 +152,10 @@ const Login: React.FC = () => {
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="inward">Inward</option>
-                <option value="QA">QA</option>
-                <option value="Admin">Admin</option>
-                <option value="accountent">Outward</option>
+                <option value="programer">Programer</option>
+                <option value="qa">QA</option>
+                <option value="accountent">Accountant</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 
