@@ -35,13 +35,13 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
   // 🔹 Keep search term synced with formData (for back navigation or prefilled data)
   useEffect(() => {
-    if (formData.Company_name && formData.Company_name !== searchTerm) {
-      setSearchTerm(formData.Company_name);
+    if (formData.company_name && formData.company_name !== searchTerm) {
+      setSearchTerm(formData.company_name);
     }
-  }, [formData.Company_name, searchTerm]);
+  }, [formData.company_name, searchTerm]);
 
   const handleChange = (field: keyof ProductType, value: string | number | boolean) => {
-    if ((field === "serial_number" || field === "Customer_No" || field === "mobile") && !/^\d*$/.test(value.toString())) return;
+    if ((field === "serial_number" || field === "customer_dc_no" || field === "contact_no") && !/^\d*$/.test(value.toString())) return;
 
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -54,19 +54,19 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
   const validateField = (field: keyof ProductType, value: string | number | boolean) => {
     switch (field) {
-      case "Company_name":
-      case "Customer_name":
+      case "company_name":
+      case "customer_name":
         if (!value || (typeof value === "string" && value.trim() === ""))
           return "This field is required.";
         break;
       case "inward_slip_number":
       case "serial_number":
-      case "wo_no":
-      case "Customer_No":
+      case "worker_no":
+      case "customer_dc_no":
         if (!value) return "This field is required.";
         if (!/^\d+$/.test(value.toString())) return "Must be numeric.";
         break;
-      case "mobile":
+      case "contact_no":
         if (!value) return "This field is required.";
         if (!/^\d+$/.test(value.toString())) return "Must be numeric.";
         if (value.toString().length < 10) return "Mobile number must be at least 10 digits.";
@@ -100,10 +100,10 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
   const handleSelectCompany = (company: Company) => {
     setFormData((prev) => ({
       ...prev,
-      Company_name: company.company_name,
-      Customer_name: company.customer_name,
-      mobile: company.contact_no,
-      Customer_No: company.customer_DC_No,
+      company_name: company.company_name,
+      customer_name: company.customer_name,
+      contact_no: company.contact_no,
+      customer_dc_no: company.customer_dc_no,
     }));
     setSearchTerm(company.company_name);
     setFilteredCompanies([]);
@@ -114,7 +114,7 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
     <div className="bg-white rounded-2xl p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
       {/* Serial Number */}
       <div>
-        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Serial No:</label>
+        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Serial No.</label>
         <input
           type="text"
           inputMode="numeric"
@@ -128,10 +128,11 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
       </div>
       {/* Inward Slip Number */}
       <div>
-        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Inward Slip No:</label>
+        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Inward Slip No.</label>
         <input
           type="text"
           inputMode="numeric"
+          placeholder="Enter Inward Slip No."
           value={formData.inward_slip_number}
           onChange={(e) => handleChange("inward_slip_number", e.target.value)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
@@ -143,15 +144,15 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
       {/* Ratio Selection */}
       <div className="mt-3">
-        <p className="text-gray-500 mb-2 text-sm sm:text-base">Select Colors:</p>
+        <p className="text-gray-500 mb-2 text-sm sm:text-base">Select Color</p>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
               name="radio"
               value="yellow"
-              checked={formData.ratio === "yellow"}
-              onChange={(e) => handleChange("ratio", e.target.value)}
+              checked={formData.color === "yellow"}
+              onChange={(e) => handleChange("color", e.target.value)}
               className="accent-blue-600 w-4 h-4"
             />
             <span className="text-sm sm:text-base text-gray-700">Yellow</span>
@@ -162,8 +163,8 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
               type="radio"
               name="radio"
               value="White"
-              checked={formData.ratio === "White"}
-              onChange={(e) => handleChange("ratio", e.target.value)}
+              checked={formData.color === "White"}
+              onChange={(e) => handleChange("color", e.target.value)}
               className="accent-blue-600 w-4 h-4"
             />
             <span className="text-sm sm:text-base text-gray-700">White</span>
@@ -176,7 +177,7 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
       {/* Date */}
       <div>
-        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Date:</label>
+        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Date</label>
         <input
           type="date"
           value={formData.date}
@@ -191,55 +192,20 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
       {/* Inward Slip Number */}
       <div>
-        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Wo. No:</label>
+        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Worker No.</label>
         <input
           type="text"
           inputMode="numeric"
-          value={formData.wo_no}
-          onChange={(e) => handleChange("wo_no", e.target.value)}
+          value={formData.worker_no}
+          onChange={(e) => handleChange("worker_no", e.target.value)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.wo_no ? "border-red-500" : "border-gray-300"
+          placeholder="Enter Your Worker No."
+          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.worker_no ? "border-red-500" : "border-gray-300"
             }`}
         />
-        {errors.wo_no && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.wo_no}</p>}
+        {errors.worker_no && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.worker_no}</p>}
       </div>
 
-      {/* Inward Slip Number */}
-      <div>
-        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">TEC:</label>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={formData.tec}
-          onChange={(e) => handleChange("tec", e.target.value)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.tec ? "border-red-500" : "border-gray-300"
-            }`}
-        />
-        {errors.tec && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.tec}</p>}
-      </div>
-
-      {/* Customer DC */}
-      <div>
-        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Customer DC</label>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="NO."
-            value={formData.Customer_No}
-            onChange={(e) => handleChange("Customer_No", e.target.value)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            className={`flex-1 border rounded-lg px-3 py-2 text-sm sm:text-base ${errors.Customer_No ? "border-red-500" : "border-gray-300"
-              }`}
-          />
-        </div>
-        {(errors.Customer_No || errors.Customer_date) && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">
-            {errors.Customer_No || errors.Customer_date}
-          </p>
-        )}
-      </div>
 
       {/* Company Name with Search */}
       <div className="relative">
@@ -250,7 +216,7 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.Company_name ? "border-red-500" : "border-gray-300"
+          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.company_name ? "border-red-500" : "border-gray-300"
             }`}
           disabled={loading}
         />
@@ -277,8 +243,30 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
           </p>
         )}
 
-        {errors.Company_name && (
-          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.Company_name}</p>
+        {errors.company_name && (
+          <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.company_name}</p>
+        )}
+      </div>
+
+      {/* Customer DC */}
+      <div>
+        <label className="block text-gray-500 mb-1 sm:mb-2 text-sm sm:text-base">Customer Document No.</label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Enter Document number"
+            value={formData.customer_dc_no}
+            onChange={(e) => handleChange("customer_dc_no", e.target.value)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            className={`flex-1 border rounded-lg px-3 py-2 text-sm sm:text-base ${errors.customer_dc_no ? "border-red-500" : "border-gray-300"
+              }`}
+          />
+        </div>
+        {(errors.customer_dc_no) && (
+          <p className="text-red-500 text-xs sm:text-sm mt-1">
+            {errors.customer_dc_no}
+          </p>
         )}
       </div>
 
@@ -287,30 +275,30 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData }) => {
         <label className="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Customer Name</label>
         <input
           type="text"
-          placeholder="Enter person name"
-          value={formData.Customer_name}
-          onChange={(e) => handleChange("Customer_name", e.target.value)}
+          placeholder="Enter Customer name"
+          value={formData.customer_name}
+          onChange={(e) => handleChange("customer_name", e.target.value)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.Customer_name ? "border-red-500" : "border-gray-300"
+          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.customer_name ? "border-red-500" : "border-gray-300"
             }`}
         />
-        {errors.Customer_name && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.Customer_name}</p>}
+        {errors.customer_name && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.customer_name}</p>}
       </div>
 
       {/* Mobile */}
       <div>
-        <label className="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Mobile No.</label>
+        <label className="block text-gray-700 mb-1 sm:mb-2 text-sm sm:text-base">Customer Mobile No.</label>
         <input
           type="text"
           inputMode="numeric"
-          placeholder="Enter phone no."
-          value={formData.mobile}
-          onChange={(e) => handleChange("mobile", e.target.value)}
+          placeholder="Enter Customer Mobile No."
+          value={formData.contact_no}
+          onChange={(e) => handleChange("contact_no", e.target.value)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.mobile ? "border-red-500" : "border-gray-300"
+          className={`w-full border rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base ${errors.contact_no ? "border-red-500" : "border-gray-300"
             }`}
         />
-        {errors.mobile && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.mobile}</p>}
+        {errors.contact_no && <p className="text-red-500 text-xs sm:text-sm mt-1">{errors.contact_no}</p>}
       </div>
     </div>
   );

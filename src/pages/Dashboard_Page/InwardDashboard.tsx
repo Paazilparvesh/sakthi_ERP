@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 // UI
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -30,33 +30,32 @@ const InwardDashboard: React.FC = () => {
     serial_number: nextSerial,
     date: getTodayDate(),
     inward_slip_number: "",
-    ratio: "",
-    wo_no: "",
-    tec: "",
-    Company_name: "",
-    Customer_name: "",
-    Customer_No: "",
-    mobile: "",
-    Test_Certificate: false,
-    status: "pending",
+    color: "",
+    worker_no: "",
+    company_name: "",
+    customer_name: "",
+    customer_dc_no: "",
+    contact_no: "",
     materials: [
       {
-        Thick: "",
-        Width: "",
-        Length: "",
-        UnitWeight: "",
-        Density: "",
-        Quantity: "",
         mat_type: "",
         mat_grade: "",
-        Remarks: "",
+        thick: "",
+        width: "",
+        length: "",
+        density: "",
+        unit_weight: "",
+        quantity: "",
+        total_weight: "",
+        stock_due: "",
+        remarks: "",
       },
     ],
   });
 
 
   // 🔹 Fetch total products and calculate next serial
-  const getTotalProducts = async () => {
+  const getTotalProducts = useCallback(async () => {
     try {
       const data = await fetchJSON<{ "Total Product": number }>(
         `${API_URL}/api/total_product/`
@@ -67,11 +66,11 @@ const InwardDashboard: React.FC = () => {
     } catch (error) {
       console.error("❌ Error fetching total products:", error);
     }
-  }
+  }, [API_URL])
 
   useEffect(() => {
     getTotalProducts();
-  });
+  }, [getTotalProducts]);
 
   // ✅ Sync serial number when nextSerial updates
   useEffect(() => {
@@ -84,14 +83,14 @@ const InwardDashboard: React.FC = () => {
   const validateStep1 = (formData: ProductType): boolean => {
     const errors: string[] = [];
 
-    if (!formData.Company_name.trim()) errors.push("Company name");
-    if (!formData.Customer_name.trim()) errors.push("Customer name");
-    if (!formData.Customer_No.trim() || !/^\d+$/.test(formData.Customer_No))
+    if (!formData.customer_name.trim()) errors.push("Company name");
+    if (!formData.customer_name.trim()) errors.push("Customer name");
+    if (!formData.customer_dc_no.trim() || !/^\d+$/.test(formData.customer_dc_no))
       errors.push("Customer No");
 
-    if (!formData.mobile.trim()) errors.push("Mobile No");
-    else if (!/^\d+$/.test(formData.mobile)) errors.push("Mobile must contain only digits");
-    else if (formData.mobile.trim().length < 10) errors.push("Mobile must be at least 10 digits");
+    if (!formData.contact_no.trim()) errors.push("Mobile No");
+    else if (!/^\d+$/.test(formData.contact_no)) errors.push("Mobile must contain only digits");
+    else if (formData.contact_no.trim().length < 10) errors.push("Mobile must be at least 10 digits");
 
     if (!formData.date) errors.push("Date");
     if (!formData.serial_number.trim()) errors.push("Serial number");
@@ -124,7 +123,15 @@ const InwardDashboard: React.FC = () => {
     for (let i = 0; i < materials.length; i++) {
       const mat = materials[i];
       // ✅ Validate Length, Breadth, Height
-      if (!mat.Thick || !mat.Width || !mat.Length || !mat.UnitWeight) {
+      if (
+        mat.thick === "" ||
+        mat.width === "" ||
+        mat.length === "" ||
+        mat.unit_weight === "" ||
+        mat.total_weight === "" ||
+        mat.quantity === "" ||
+        mat.density === ""
+      ) {
         toast({
           title: "Incomplete Dimensions",
           description: `Please fill all fields (Thick × Width × Length × Weight) for row ${i + 1}.`,
@@ -135,25 +142,18 @@ const InwardDashboard: React.FC = () => {
 
       // ✅ Validate numeric inputs
       if (
-        isNaN(Number(mat.Thick)) ||
-        isNaN(Number(mat.Width)) ||
-        isNaN(Number(mat.Length)) ||
-        isNaN(Number(mat.UnitWeight))
+        isNaN(Number(mat.thick)) ||
+        isNaN(Number(mat.width)) ||
+        isNaN(Number(mat.length)) ||
+        isNaN(Number(mat.unit_weight)) ||
+        isNaN(Number(mat.density)) ||
+        isNaN(Number(mat.total_weight)) ||
+        isNaN(Number(mat.quantity))
+
       ) {
         toast({
           title: "Invalid Input",
           description: `All values must be numeric in row ${i + 1}.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-
-      // ✅ Validate Quantity
-      if (!mat.Quantity[i] || Number(mat.Quantity[i]) <= 0) {
-        toast({
-          title: "Invalid Quantity",
-          description: `Enter a valid quantity for row ${i + 1}.`,
           variant: "destructive",
         });
         return false;
@@ -177,28 +177,27 @@ const InwardDashboard: React.FC = () => {
     setStep(1);
     setFormData({
       serial_number: nextSerial,
-      date: getTodayDate(),
       inward_slip_number: "",
-      ratio: "",
-      wo_no: "",
-      tec: "",
-      Company_name: "",
-      Customer_name: "",
-      Customer_No: "",
-      mobile: "",
-      Test_Certificate: false,
-      status: "pending",
+      color: "",
+      date: getTodayDate(),
+      worker_no: "",
+      company_name: "",
+      customer_dc_no: "",
+      customer_name: "",
+      contact_no: "",
       materials: [
         {
-          Thick: "",
-          Width: "",
-          Length: "",
-          UnitWeight: "",
-          Density: "",
-          Quantity: "",
           mat_type: "",
           mat_grade: "",
-          Remarks: "",
+          thick: "",
+          width: "",
+          length: "",
+          unit_weight: "",
+          density: "",
+          quantity: "",
+          total_weight: "",
+          stock_due: "",
+          remarks: "",
         },
       ],
     });
@@ -215,31 +214,30 @@ const InwardDashboard: React.FC = () => {
     try {
       // ✅ Combine Product + Materials into a single payload
       const combinedPayload = {
-        Company_name: formData.Company_name,
         serial_number: formData.serial_number,
         date: formData.date,
         inward_slip_number: formData.inward_slip_number,
-        ratio: formData.ratio,
-        wo_no: formData.wo_no,
-        tec: formData.tec,
-        Customer_name: formData.Customer_name,
-        Customer_No: formData.Customer_No,
-        mobile: formData.mobile,
+        color: formData.color,
+        worker_no: formData.worker_no,
+        company_name: formData.company_name,
+        customer_name: formData.customer_name,
+        customer_dc_no: formData.customer_dc_no,
+        contact_no: formData.contact_no,
         created_by: created_by,
-        materials: formData.materials.map((mat, index) => ({
-          Thick: mat.Thick,
-          Width: mat.Width,
-          Length: mat.Length,
-          UnitWeight: mat.UnitWeight,
-          Density: mat.Density,
-          Quantity: mat.Quantity,
+        materials: formData.materials.map((mat) => ({
           mat_type: mat.mat_type,
           mat_grade: mat.mat_grade,
-          Remarks: mat.Remarks,
+          thick: mat.thick,
+          width: mat.width,
+          length: mat.length,
+          density: mat.density,
+          unit_weight: mat.unit_weight,
+          quantity: mat.quantity,
+          total_weight: mat.total_weight,
+          stock_due: mat.stock_due,
+          remarks: mat.remarks,
         })),
       };
-
-      console.log("🟢 Payload :", combinedPayload);
 
       // ✅ Single API Call
       const response = await fetchJSON(`${API_URL}/api/add_full_product/`, {
@@ -248,11 +246,9 @@ const InwardDashboard: React.FC = () => {
         body: JSON.stringify(combinedPayload),
       });
 
-      console.log("✅ Success:", response);
-
       toast({
         title: "Form Submitted Successfully!",
-        description: "Product and materials saved together.",
+        description: "Product and materials saved Succesfully.",
       });
 
       resetForm();

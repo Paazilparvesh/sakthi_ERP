@@ -6,8 +6,45 @@ import { Trash2 } from "lucide-react";
 
 const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
+  // ✅ Standard material densities (in your required unit)
+  const MATERIAL_DENSITIES: Record<string, number> = {
+    SS: 0.000008,
+    MS: 0.00000785,
+    Aluminium: 0.0000027,
+    Copper: 0.00000896,
+    Brass: 0.0000084,
+  };
 
-  const MATERIAL_TYPES = ["SS", "MS", "Aluminium", "Copper", "Brass"];
+  const TEC = Object.keys(MATERIAL_DENSITIES);
+
+  // ✅ Helper: Calculate Unit Weight, Total Weight, and Stock Due
+  const recalcWeights = (mat: Material) => {
+    const { thick, width, length, density, quantity } = mat;
+
+    // Volume-based unit weight
+    const volume =
+      Number(thick) && Number(width) && Number(length)
+        ? Number(thick) * Number(width) * Number(length)
+        : 0;
+
+    const unitWeight =
+      volume > 0 && Number(density) > 0
+        ? parseFloat((volume * Number(density)).toFixed(3))
+        : "";
+
+    const totalWeight =
+      Number(quantity) > 0 && Number(unitWeight) > 0
+        ? parseFloat((Number(quantity) * Number(unitWeight)).toFixed(3))
+        : "";
+
+    // Simple stock due logic (customize as needed)
+    let stock_due = "";
+    if (Number(totalWeight) > 0 && Number(totalWeight) < 50) stock_due = "1";
+    else if (Number(totalWeight) >= 50 && Number(totalWeight) < 200) stock_due = "3";
+    else if (Number(totalWeight) >= 200) stock_due = "5";
+
+    return { ...mat, unit_weight: unitWeight, total_weight: totalWeight, stock_due };
+  };
 
   // Ensure at least one default row exists
   useEffect(() => {
@@ -16,15 +53,17 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
         ...prev,
         materials: [
           {
-            Thick: "",
-            Width: "",
-            Length: "",
-            UnitWeight: "",
-            Density: "",
-            Quantity: "",
             mat_type: "",
             mat_grade: "",
-            Remarks: "",
+            thick: "",
+            width: "",
+            length: "",
+            density: "",
+            unit_weight: "",
+            quantity: "",
+            total_weight: "",
+            stock_due: "",
+            remarks: "",
           },
         ],
       }));
@@ -38,15 +77,17 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
       materials: [
         ...(prev.materials || []),
         {
-          Thick: "",
-          Width: "",
-          Length: "",
-          UnitWeight: "",
-          Density: "",
-          Quantity: "",
           mat_type: "",
           mat_grade: "",
-          Remarks: "",
+          thick: "",
+          width: "",
+          length: "",
+          density: "",
+          unit_weight: "",
+          quantity: "",
+          total_weight: "",
+          stock_due: "",
+          remarks: "",
         },
       ],
     }));
@@ -69,7 +110,22 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
   ) => {
     setFormData((prev) => {
       const updatedMaterials = [...(prev.materials || [])];
-      (updatedMaterials[index][field] as string | number) = value; // ✅ Fix here
+      let mat = { ...updatedMaterials[index] };
+
+      (mat[field] as string | number) = value;
+
+      // ✅ If mat_type changes, auto-assign Density
+      if (field === "mat_type" && typeof value === "string") {
+        const newDensity = MATERIAL_DENSITIES[value] || "";
+        mat.density = newDensity;
+      }
+
+      // If quantity or type changes, recalc weights
+      if (["mat_type", "quantity"].includes(field)) {
+        mat = recalcWeights(mat);
+      }
+
+      updatedMaterials[index] = mat;
       return { ...prev, materials: updatedMaterials };
     });
   };
@@ -83,21 +139,12 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
 
     setFormData((prev) => {
       const updatedMaterials = [...(prev.materials || [])];
-      updatedMaterials[index][field] = numericValue;
+      let mat = { ...updatedMaterials[index] };
+      mat[field] = numericValue;
 
-      const { Thick, Width, Length, UnitWeight } = updatedMaterials[index];
-      const volume =
-        Number(Thick) && Number(Width) && Number(Length)
-          ? Number(Thick) * Number(Width) * Number(Length)
-          : 0;
+      mat = recalcWeights(mat);
 
-      const Density =
-        volume > 0 && Number(UnitWeight) > 0
-          ? parseFloat((Number(UnitWeight) / volume).toFixed(4))
-          : "";
-
-      updatedMaterials[index].Density = Density;
-
+      updatedMaterials[index] = mat;
       return { ...prev, materials: updatedMaterials };
     });
   };
@@ -119,10 +166,12 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
           <thead className="bg-gray-200 text-gray-700 text-xs sm:text-sm md:text-base font-semibold">
             <tr>
               <th className="py-2 px-1 border w-[5%]">S.No</th>
-              <th className="py-2 px-1 border w-[10%]">Type</th>
+              <th className="py-2 px-1 border w-[10%]">TEC</th>
               <th className="py-2 px-1 border w-[8%]">Grade</th>
               <th className="py-2 px-1 border w-[35%]">Dimensions</th>
               <th className="py-2 px-1 border w-[8%]">Qty</th>
+              <th className="py-2 px-1 border w-[8%]">Total weight</th>
+              <th className="py-2 px-1 border w-[15%]">Stock Due</th>
               <th className="py-2 px-1 border w-[15%]">Remarks</th>
               <th className="py-2 px-1 border w-[7%]">Action</th>
             </tr>
@@ -142,7 +191,7 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                     className="w-full border border-gray-300 rounded-lg px-2 py-1 text-xs sm:text-sm text-center outline-none bg-white"
                   >
                     <option value="">Select</option>
-                    {MATERIAL_TYPES.map((type) => (
+                    {TEC.map((type) => (
                       <option key={type} value={type}>
                         {type}
                       </option>
@@ -161,68 +210,11 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                   />
                 </td>
 
-
-                {/* Material Dimensiona (Thick × Width × Length × Weight = Density) */}
-                {/* <td className="border">
-                  <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 px-2">
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.Thick?.[index] ?? ""}
-                      onChange={(e) =>
-                        handleDimensionChange(index, "Thick", e.target.value)
-                      }
-                      placeholder="Thick"
-                      className="w-1/5 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center outline-none"
-                    />
-                    ×
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.Width?.[index] ?? ""}
-                      onChange={(e) =>
-                        handleDimensionChange(index, "Width", e.target.value)
-                      }
-                      placeholder="Width"
-                      className="w-1/5 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center outline-none"
-                    />
-                    ×
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.Length?.[index] ?? ""}
-                      onChange={(e) =>
-                        handleDimensionChange(index, "Length", e.target.value)
-                      }
-                      placeholder="Length"
-                      className="w-1/5 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center outline-none"
-                    />
-                    ×
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.UnitWeight?.[index] ?? ""}
-                      onChange={(e) =>
-                        handleDimensionChange(index, "UnitWeight", e.target.value)
-                      }
-                      placeholder="Weight"
-                      className="w-1/5 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center outline-none"
-                    />
-                    =
-                    <input
-                      type="number"
-                      readOnly
-                      value={formData.Density?.[index] || ""}
-                      placeholder="Density"
-                      className="w-1/5 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center bg-gray-100 text-gray-700 outline-none"
-                      title="Auto-calculated"
-                    />
-                  </div>
-                </td> */}
+                {/* Dimensions Section */}
                 <td className="border">
                   <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2 px-2">
-                    {["Thick", "Width", "Length", "UnitWeight"].map(
-                      (field, i) => (
+                    {["thick", "width", "length"].map(
+                      (field) => (
                         <input
                           key={field}
                           type="number"
@@ -236,13 +228,22 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                         />
                       )
                     )}
+                    x
+                    <input
+                      type="number"
+                      readOnly
+                      value={mat.density || ""}
+                      placeholder="Density"
+                      className="w-1/3 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center bg-gray-100 text-gray-700 outline-none"
+                      title="Auto from TEC"
+                    />
                     =
                     <input
                       type="number"
                       readOnly
-                      value={mat.Density || ""}
-                      placeholder="Density"
-                      className="w-1/5 border border-gray-300 rounded-lg px-1 py-1 text-xs sm:text-sm text-center bg-gray-100 text-gray-700 outline-none"
+                      value={mat.unit_weight || ""}
+                      placeholder="Unit Wt."
+                      className="w-1/4 border border-gray-300 rounded-lg pl-1 py-1 text-xs sm:text-sm text-center bg-gray-100 text-gray-700 outline-none"
                       title="Auto-calculated"
                     />
                   </div>
@@ -252,11 +253,38 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                 <td className="border">
                   <input
                     type="number"
-                    value={mat.Quantity}
+                    value={mat.quantity}
                     onChange={(e) =>
-                      handleInputChange(index, "Quantity", e.target.value)
+                      handleInputChange(index, "quantity", e.target.value)
                     }
                     placeholder="0"
+                    className="w-full h-14 px-2 py-1 text-xs sm:text-sm text-center outline-none"
+                  />
+                </td>
+
+                {/* Total Weight in Kgs */}
+                <td className="border">
+                  <input
+                    type="number"
+                    value={mat.total_weight}
+                    onChange={(e) =>
+                      handleInputChange(index, "total_weight", e.target.value)
+                    }
+                    placeholder="Total Weight"
+                    className="w-full h-14 px-2 py-1 text-xs sm:text-sm text-center outline-none"
+                  />
+                </td>
+
+
+                {/* Stock Due */}
+                <td className="border">
+                  <input
+                    type="number"
+                    value={mat.stock_due}
+                    onChange={(e) =>
+                      handleInputChange(index, "stock_due", e.target.value)
+                    }
+                    placeholder="Days"
                     className="w-full h-14 px-2 py-1 text-xs sm:text-sm text-center outline-none"
                   />
                 </td>
@@ -265,9 +293,9 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                 <td className="border">
                   <input
                     type="text"
-                    value={mat.Remarks}
+                    value={mat.remarks}
                     onChange={(e) =>
-                      handleInputChange(index, "Remarks", e.target.value)
+                      handleInputChange(index, "remarks", e.target.value)
                     }
                     placeholder="Optional"
                     className="w-full h-14 px-2 text-xs sm:text-sm outline-none"
