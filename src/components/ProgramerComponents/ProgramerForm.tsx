@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { StepProgressBar } from "@/components/ReusableComponents/StepProgressBar";
 import { toast } from "@/hooks/use-toast";
+import { ProductType, Material } from "@/types/inward.type";
 import {
   Dialog,
   DialogContent,
@@ -12,25 +13,27 @@ import {
 } from "@/components/ui/dialog";
 
 interface ProgramerFormData {
+  product_details: number | string;
+  material_details: number | string;
   program_no: string;
   program_date: string;
-  Pland_Qty: string;
-  Bal_Qty: string;
-  UsedWeightInKgs: string;
-  components_per_sheet: string;
+  processed_quantity: string;
+  balance_quantity: string;
+  used_weight: string;
+  number_of_sheets: string;
   cut_length_per_sheet: string;
   pierce_per_sheet: string;
-  planned_mins_per_sheet: string;
-  planned_hours_total: string;
-  total_meter: string;
+  processed_mins_per_sheet: string;
+  total_planned_hours: string;
+  total_meters: string;
   total_piercing: string;
-  total_used_weight_kg: string;
-  total_components: string;
-  product_details: number;
+  total_used_weight: string;
+  total_no_of_sheets: string;
+  created_by?: string;
 }
 
 interface ProgramerFormWrapperProps {
-  item: number;
+  item: ProductType;
   onBack?: () => void;
   onSuccess?: () => void;
 }
@@ -42,35 +45,36 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 }) => {
   const API_URL = import.meta.env.VITE_API_URL;
   const totalSteps = 2;
-
+  const materials: Material[] = item.materials || [];
   const userName = localStorage.getItem("username")
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-
   const [formData, setFormData] = useState<ProgramerFormData>({
+    product_details: item.id,
+    material_details: "",
     program_no: "",
     program_date: "",
-    Pland_Qty: "",
-    Bal_Qty: "",
-    UsedWeightInKgs: "",
-    components_per_sheet: "",
+    processed_quantity: "",
+    balance_quantity: "",
+    used_weight: "",
+    number_of_sheets: "",
     cut_length_per_sheet: "",
     pierce_per_sheet: "",
-    planned_mins_per_sheet: "",
-    planned_hours_total: "",
-    total_meter: "",
+    processed_mins_per_sheet: "",
+    total_planned_hours: "",
+    total_meters: "",
     total_piercing: "",
-    total_used_weight_kg: "",
-    total_components: "",
-    product_details: item,
+    total_used_weight: "",
+    total_no_of_sheets: "",
+    created_by: ""
   });
 
   // ✅ keep product ID synced if `item` changes
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, product_details: item }));
+    setFormData((prev) => ({ ...prev, product_details: item.id }));
   }, [item]);
 
   // ✅ Auto-fill today's date
@@ -84,7 +88,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
   // ✅ Auto-generate Program Number once on mount
   useEffect(() => {
-    if (!formData.program_no) {
+    if (!formData.program_no && userName) {
       const now = new Date();
       const year = now.getFullYear().toString().slice(-2); // e.g. "25"
       const month = String(now.getMonth() + 1).padStart(2, "0"); // e.g. "11"
@@ -103,15 +107,48 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     }
   }, [userName, formData.program_no]);
 
+    // ✅ Auto calculations for totals
+  useEffect(() => {
+    const {
+      number_of_sheets,
+      processed_quantity,
+      pierce_per_sheet,
+      used_weight,
+      processed_mins_per_sheet,
+    } = formData;
+
+    const numSheets = Number(number_of_sheets) || 0;
+    const piercePerSheet = Number(pierce_per_sheet) || 0;
+    const weight = Number(used_weight) || 0;
+    const minsPerSheet = Number(processed_mins_per_sheet) || 0;
+
+    const totalPiercing = numSheets * piercePerSheet;
+    const totalWeight = numSheets * weight;
+    const totalPlannedHours = ((numSheets * minsPerSheet) / 60).toFixed(2);
+
+    setFormData((prev) => ({
+      ...prev,
+      total_piercing: totalPiercing.toString(),
+      total_used_weight: totalWeight.toString(),
+      total_planned_hours: totalPlannedHours.toString(),
+      total_no_of_sheets: numSheets.toString(),
+    }));
+  }, [
+    formData.number_of_sheets,
+    formData.pierce_per_sheet,
+    formData.used_weight,
+    formData.processed_mins_per_sheet,
+  ]);
+
 
   const handleValidateAll = () => {
     const fieldsToCheck = Object.keys(formData).filter(
-      (k) => !["product_details"].includes(k)
+      (k) => !["product_details", "created_by"].includes(k)
     );
 
     let hasError = false;
     fieldsToCheck.forEach((key) => {
-      const error = validateField(key, formData[key as keyof ProgramerFormData]);
+      const error = validateField(key, String(formData[key as keyof ProgramerFormData]));
       if (error) hasError = true;
     });
 
@@ -127,8 +164,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     return true;
   };
 
-
-
   const validateField = (name: string, value: string) => {
     let error = "";
 
@@ -136,18 +171,18 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       error = `${LABELS[name as keyof ProgramerFormData]} is required.`;
     } else if (
       [
-        "Pland_Qty",
-        "Bal_Qty",
-        "UsedWeightInKgs",
-        "components_per_sheet",
+        "processed_quantity",
+        "balance_quantity",
+        "used_weight",
+        "number_of_sheets",
         "cut_length_per_sheet",
         "pierce_per_sheet",
-        "planned_mins_per_sheet",
-        "planned_hours_total",
-        "total_meter",
+        "processed_mins_per_sheet",
+        "total_planned_hours",
+        "total_meters",
         "total_piercing",
-        "total_used_weight_kg",
-        "total_components",
+        "total_used_weight",
+        "total_no_of_sheets",
       ].includes(name) &&
       isNaN(Number(value))
     ) {
@@ -157,7 +192,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     setFormErrors((prev) => ({ ...prev, [name]: error }));
     return error;
   };
-
 
   const handleNext = () => {
     const fieldsToCheck =
@@ -169,7 +203,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
     let hasError = false;
     fieldsToCheck.forEach((key) => {
-      const error = validateField(key, formData[key as keyof ProgramerFormData]);
+      const error = validateField(key, String(formData[key as keyof ProgramerFormData]));
       if (error) hasError = true;
     });
 
@@ -184,7 +218,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   };
-
 
   const handleBack = () => {
     if (currentStep === 1) {
@@ -265,21 +298,23 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
   // --- Field Label Map for Readable Names
   const LABELS: Record<keyof ProgramerFormData, string> = {
+    product_details: "Product ID",
+    material_details: "Material ID",
     program_no: "Programer Number",
     program_date: "Program Date",
-    Pland_Qty: "Planned Quantity",
-    Bal_Qty: "Balance Quantity",
-    UsedWeightInKgs: "Used Weight (Kg)",
-    components_per_sheet: "Components per Sheet",
+    processed_quantity: "Planned Quantity",
+    balance_quantity: "Balance Quantity",
+    used_weight: "Used Weight (Kg)",
+    number_of_sheets: "Components per Sheet",
     cut_length_per_sheet: "Cut Length per Sheet",
     pierce_per_sheet: "Pierce per Sheet",
-    planned_mins_per_sheet: "Planned Minutes per Sheet",
-    planned_hours_total: "Planned Total Hours",
-    total_meter: "Total Meters",
+    processed_mins_per_sheet: "Planned Minutes per Sheet",
+    total_planned_hours: "Planned Total Hours",
+    total_meters: "Total Meters",
     total_piercing: "Total Piercings",
-    total_used_weight_kg: "Total Used Weight (Kg)",
-    total_components: "Total Components",
-    product_details: "Product ID", // still for label map
+    total_used_weight: "Total Used Weight (Kg)",
+    total_no_of_sheets: "Total Components",
+    created_by: "Created By",
   };
 
   // --- UI Rendering
@@ -348,6 +383,35 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                 </div>
               ))}
 
+              {/* ✅ Material Dropdown */}
+              <div className="flex flex-col space-y-1.5">
+                <label className="text-sm font-medium text-gray-700">
+                  Material
+                </label>
+                <select
+                  name="material_details"
+                  value={formData.material_details}
+                  onChange={handleChange}
+                  className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${
+                    formErrors.material_details
+                      ? "border-red-500 focus:ring-red-400"
+                      : "border-gray-300 focus:ring-blue-500"
+                  }`}
+                >
+                  <option value="">Select Material</option>
+                  {materials.map((mat) => (
+                    <option key={mat.id} value={mat.id}>
+                      {mat.mat_type} ({mat.mat_grade}) - {mat.thick}mm × {mat.width} × {mat.length}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.material_details && (
+                  <span className="text-red-500 text-xs">
+                    {formErrors.material_details}
+                  </span>
+                )}
+              </div>
+              
             </div>
           )}
 
@@ -357,7 +421,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
               {Object.keys(formData)
                 .filter(
                   (k) =>
-                    !["program_no", "program_date", "product_details"].includes(k)
+                    !["program_no", "program_date", "product_details", "created_by", "material_details"].includes(k)
                 )
                 .map((key) => (
                   <div key={key} className="flex flex-col space-y-1.5">

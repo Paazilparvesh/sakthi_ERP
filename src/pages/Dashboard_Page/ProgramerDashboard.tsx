@@ -99,7 +99,9 @@ const ProgramerDashboard: React.FC = () => {
           <CardContent className="p-0">
             {/* ---------------------- LIST VIEW ---------------------- */}
             {view === "list" && (
-              <ProgramList data={FormData} onView={handleViewDetail} />
+              <ProgramList 
+                data={FormData} 
+                onView={handleViewDetail} />
             )}
 
             {/* --------------------- DETAIL VIEW --------------------- */}
@@ -114,7 +116,7 @@ const ProgramerDashboard: React.FC = () => {
             {/* ---------------------- FORM VIEW ---------------------- */}
             {view === "form" && selectedItem && (
               <ProgramerFormWrapper
-                item={selectedItem.id}
+                item={selectedItem}
                 onBack={handleBack}
                 onSuccess={handleFormSuccess}
               />
