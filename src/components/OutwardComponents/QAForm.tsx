@@ -29,6 +29,11 @@ interface QAFormData {
   machine_used: string;
   operator_name: string;
 }
+interface Operator {
+  id: number;
+  operator_name: string;
+  operator_id: string;
+}
 
 // 🔧 Reusable Input Field
 const InputField = ({
@@ -113,6 +118,7 @@ const QAForm: React.FC<QAFormProps> = ({
 }) => {
   const { toast } = useToast();
   const [operators, setOperators] = useState<string[]>([]);
+  const [loadingOperators, setLoadingOperators] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,25 +134,39 @@ const QAForm: React.FC<QAFormProps> = ({
     operator_name: "",
   });
 
-  useEffect(() => {
-    console.log("📦 QAForm materials received:", materials);
-  }, [materials]);
-
   const userRole = localStorage.getItem("Role_Type");
   const username = localStorage.getItem("username");
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // ✅ Static operator list
+  /* ---------------------- Fetch Operators from API ---------------------- */
   useEffect(() => {
-    setOperators([
-      "John Doe",
-      "Sarah Lee",
-      "Michael Smith",
-      "Priya Kumar",
-      "Rajesh Patel",
-      "Emma Johnson",
-    ]);
-  }, []);
+    const fetchOperators = async () => {
+      setLoadingOperators(true);
+      try {
+        const res = await fetch(`${API_URL}/api/get_operator/`);
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.msg || "Failed to fetch operators");
+        if (Array.isArray(data)) {
+          setOperators(data.map((op: Operator) => op.operator_name));
+        } else {
+          setOperators([]);
+        }
+      } catch (error) {
+        console.error("❌ Operator fetch error:", error);
+        toast({
+          title: "Fetch Error",
+          description:
+            error.message || "Unable to load operators. Please check server.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingOperators(false);
+      }
+    };
+
+    fetchOperators();
+  }, [API_URL, toast]);
 
   // ✅ Handle Input Changes
   const handleChange = (
@@ -365,7 +385,13 @@ const QAForm: React.FC<QAFormProps> = ({
             name="operator_name"
             value={formData.operator_name}
             onChange={handleChange}
-            options={operators}
+            options={
+              loadingOperators
+                ? ["Loading operators..."]
+                : operators.length > 0
+                  ? operators
+                  : ["No operators available"]
+            }
             error={formErrors.operator_name}
             spanFull
           />
