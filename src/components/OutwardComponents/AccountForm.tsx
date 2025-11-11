@@ -1,49 +1,96 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Material } from "@/types/inward.type";
 
 interface AccountFormProps {
     productId: number;
     companyName: string;
+    materials: Material[];
     onBack: () => void;
     onSubmitSuccess?: () => void;
 }
 
 interface AccountFormData {
+    material_details: string;
     invoice_no: string;
     status: string;
     remarks: string;
 }
 
-const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBack, onSubmitSuccess }) => {
+const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, materials, onBack, onSubmitSuccess }) => {
     const { toast } = useToast();
 
     const [formData, setFormData] = useState<AccountFormData>({
+        material_details: "",
         invoice_no: "",
         status: "",
         remarks: "",
     });
 
+    const [programDate, setProgramDate] = useState<string>("");
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [showConfirm, setShowConfirm] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const userRole = localStorage.getItem("Role_Type");
     const username = localStorage.getItem("username");
+    const API_URL = import.meta.env.VITE_API_URL;
+
+    /* 🔹 Load Program Date when material changes */
+    useEffect(() => {
+        const fetchProgramDate = async () => {
+            if (!formData.material_details) return;
+
+            try {
+                const res = await fetch(
+                    `${API_URL}/api/get_programer_Details/?material_id=${formData.material_details}`
+                );
+                const data = await res.json();
+                if (Array.isArray(data) && data.length > 0) {
+                    setProgramDate(data[0].program_date || "");
+                }
+            } catch (error) {
+                console.error("⚠️ Failed to fetch program date", error);
+            }
+        };
+
+        fetchProgramDate();
+    }, [formData.material_details, API_URL]);
 
     // ✅ Handle Input Changes + Realtime Validation
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-    ) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-        validateField(name, value);
-    };
+  e: React.ChangeEvent<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  >
+) => {
+  const { name, value } = e.target;
+  const updated = { ...formData, [name]: value };
+
+  // ✅ Auto-update remarks based on status selection
+  if (name === "status") {
+    if (value === "open") {
+      updated.remarks = `This Material is Processed on ${programDate || "N/A"}`;
+    } else if (value === "closed") {
+      updated.remarks = "Bill Closed";
+    }
+  }
+
+  // ✅ If user switches material and status is "open", refresh program date in remarks
+  if (name === "material_details" && formData.status === "open") {
+    updated.remarks = `This Material is Processed on ${programDate || "N/A"}`;
+  }
+
+  setFormData(updated);
+  validateField(name, value);
+};
+
 
     // ✅ Field-Level Validation
     const validateField = (name: string, value: string) => {
         let error = "";
+        if (name === "material_details" && !value.trim()) error = "Please select a material.";
         if (name === "invoice_no" && !value.trim()) error = "Invoice number is required.";
         if (name === "status" && !value.trim()) error = "Please select a status.";
         if (name === "remarks" && value.trim().length < 3)
@@ -88,6 +135,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
 
         const payload: Record<string, any> = {
             product_details: productId,
+            material_details: formData.material_details,
             invoice_no: formData.invoice_no,
             status: formData.status,
             remarks: formData.remarks,
@@ -97,7 +145,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
         else if (userRole?.toLowerCase() === "accountent") payload.created_by_acc = username;
 
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/add_acc_details/`, {
+            const res = await fetch(`${API_URL}/api/add_acc_details/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -113,7 +161,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
 
             onSubmitSuccess?.();
             onBack();
-        } catch (err: any) {
+        } catch (err) {
             toast({
                 title: "Error ❌",
                 description: err.message || "Something went wrong while submitting account data.",
@@ -132,6 +180,35 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
             </h2>
 
             <form onSubmit={handleOpenConfirm} className="space-y-8">
+                {/* ✅ Material Dropdown */}
+                <div className="flex flex-col space-y-1.5">
+                    <label className="text-sm font-medium text-gray-700">Material</label>
+                    <select
+                        name="material_details"
+                        value={formData.material_details}
+                        onChange={handleChange}
+                        className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.material_details
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-green-500"
+                            }`}
+                    >
+                        <option value="">Select Material</option>
+                        {materials
+                              .filter((mat) => mat.acc_status === "pending")
+                            .map((mat) => (
+                                <option key={mat.id} value={mat.id}>
+                                    {mat.mat_type} ({mat.mat_grade}) — {mat.thick}mm ×{" "}
+                                    {mat.width} × {mat.length}
+                                </option>
+                            ))}
+                    </select>
+                    {formErrors.material_details && (
+                        <span className="text-red-500 text-xs">
+                            {formErrors.material_details}
+                        </span>
+                    )}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Invoice Number */}
                     <div className="flex flex-col space-y-1.5">
@@ -165,10 +242,8 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
                                 }`}
                         >
                             <option value="">Select Status</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Hold">Hold</option>
-                            <option value="Cancelled">Cancelled</option>
+                            <option value="open">OPEN</option>
+                            <option value="closed">CLOSED</option>
                         </select>
                         {formErrors.status && (
                             <span className="text-red-500 text-xs">{formErrors.status}</span>
@@ -185,8 +260,8 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
                             rows={4}
                             placeholder="Add any remarks..."
                             className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.remarks
-                                ? "border-red-500 focus:ring-red-400"
-                                : "border-gray-300 focus:ring-blue-500"
+                                    ? "border-red-500 focus:ring-red-400"
+                                    : "border-gray-300 focus:ring-blue-500"
                                 }`}
                         />
                         {formErrors.remarks && (
@@ -201,7 +276,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, onBac
                         type="submit"
                         className="bg-green-700 hover:bg-green-800 text-white font-medium rounded-xl shadow-md transition-all w-full sm:w-auto"
                     >
-                        Submit Account Form
+                        Submit
                     </Button>
 
                     <Button

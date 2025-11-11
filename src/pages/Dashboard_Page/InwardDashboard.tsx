@@ -266,11 +266,11 @@ const InwardDashboard: React.FC = () => {
   };
 
   return (
-    <div className=" flex flex-col items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
+    <div className="flex flex-col items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
       <div className="w-full space-y-6">
         {/* Title */}
         <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-center text-gray-800 leading-tight">
-          MATERIAL INWARD CUM INCOMING INSPECTION REPORT
+          Material Inward Report
         </h1>
 
         {/* Step Progress */}

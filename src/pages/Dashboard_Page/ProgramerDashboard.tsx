@@ -99,8 +99,8 @@ const ProgramerDashboard: React.FC = () => {
           <CardContent className="p-0">
             {/* ---------------------- LIST VIEW ---------------------- */}
             {view === "list" && (
-              <ProgramList 
-                data={FormData} 
+              <ProgramList
+                data={FormData}
                 onView={handleViewDetail} />
             )}
 

@@ -51,6 +51,8 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedMaterialQty, setSelectedMaterialQty] = useState<number>(0);
+
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<ProgramerFormData>({
     product_details: item.id,
@@ -84,7 +86,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       const formattedDate = today.toISOString().split("T")[0]; // "YYYY-MM-DD"
       setFormData((prev) => ({ ...prev, program_date: formattedDate }));
     }
-  }, []);
+  }, [formData.program_date]);
 
   // ✅ Auto-generate Program Number once on mount
   useEffect(() => {
@@ -107,38 +109,37 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     }
   }, [userName, formData.program_no]);
 
-    // ✅ Auto calculations for totals
+
   useEffect(() => {
-    const {
-      number_of_sheets,
-      processed_quantity,
-      pierce_per_sheet,
-      used_weight,
-      processed_mins_per_sheet,
-    } = formData;
-
-    const numSheets = Number(number_of_sheets) || 0;
-    const piercePerSheet = Number(pierce_per_sheet) || 0;
-    const weight = Number(used_weight) || 0;
-    const minsPerSheet = Number(processed_mins_per_sheet) || 0;
-
-    const totalPiercing = numSheets * piercePerSheet;
-    const totalWeight = numSheets * weight;
-    const totalPlannedHours = ((numSheets * minsPerSheet) / 60).toFixed(2);
-
-    setFormData((prev) => ({
-      ...prev,
-      total_piercing: totalPiercing.toString(),
-      total_used_weight: totalWeight.toString(),
-      total_planned_hours: totalPlannedHours.toString(),
-      total_no_of_sheets: numSheets.toString(),
-    }));
+    setFormData((prev) => ({ ...prev, ...recalculateTotals(prev) }));
   }, [
     formData.number_of_sheets,
+    formData.processed_quantity,
     formData.pierce_per_sheet,
     formData.used_weight,
     formData.processed_mins_per_sheet,
+    formData.cut_length_per_sheet,
   ]);
+
+
+  const recalculateTotals = (data: ProgramerFormData) => {
+    const num = (v: string) => Number(v) || 0;
+    const totalPlannedHours = num(data.processed_quantity) * num(data.processed_mins_per_sheet);
+    const totalMeters = num(data.processed_quantity) * num(data.cut_length_per_sheet);
+    const totalPiercing = num(data.processed_quantity) * num(data.pierce_per_sheet);
+    const totalWeight = num(data.processed_quantity) * num(data.used_weight);
+    const totalSheet = num(data.processed_quantity) * num(data.number_of_sheets);
+
+    return {
+      total_piercing: totalPiercing.toString(),
+      total_used_weight: totalWeight.toString(),
+      total_planned_hours: totalPlannedHours.toString(),
+      total_meters: totalMeters.toString(),
+      total_no_of_sheets: totalSheet.toString(),
+    };
+  };
+
+
 
 
   const handleValidateAll = () => {
@@ -194,28 +195,56 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
   };
 
   const handleNext = () => {
-    const fieldsToCheck =
-      currentStep === 1
-        ? ["program_no", "program_date"]
-        : Object.keys(formData).filter(
-          (k) => !["program_no", "program_date", "product_details"].includes(k)
-        );
-
     let hasError = false;
-    fieldsToCheck.forEach((key) => {
-      const error = validateField(key, String(formData[key as keyof ProgramerFormData]));
-      if (error) hasError = true;
-    });
 
+    // ✅ Step 1 validation
+    if (currentStep === 1) {
+      // Check if material is selected
+      if (!formData.material_details) {
+        setFormErrors((prev) => ({
+          ...prev,
+          material_details: "Please select a material before proceeding.",
+        }));
+        hasError = true;
+      }
+
+      // Validate Program No and Date
+      ["program_no", "program_date"].forEach((key) => {
+        const error = validateField(key, String(formData[key as keyof ProgramerFormData]));
+        if (error) hasError = true;
+      });
+    }
+
+    // ✅ Step 2 validation
+    else {
+      const fieldsToCheck = Object.keys(formData).filter(
+        (k) =>
+          ![
+            "program_no",
+            "program_date",
+            "product_details",
+            "created_by",
+            "material_details",
+          ].includes(k)
+      );
+
+      fieldsToCheck.forEach((key) => {
+        const error = validateField(key, String(formData[key as keyof ProgramerFormData]));
+        if (error) hasError = true;
+      });
+    }
+
+    // ✅ Show toast if validation failed
     if (hasError) {
       toast({
-        title: "Please fix highlighted fields",
-        description: "Some inputs are missing or invalid.",
+        title: "Missing required fields",
+        description: "Please select a material and fill all required inputs before continuing.",
         variant: "destructive",
       });
       return;
     }
 
+    // ✅ If all good, go to next step
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   };
 
@@ -227,11 +256,37 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     }
   };
 
-  // ✅ Enhanced handleChange
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      let updated = { ...prev, [name]: value };
+
+      // ✅ When material changes — find and store its quantity
+      if (name === "material_details") {
+        const selectedMat = materials.find(
+          (mat) => mat.id === Number(value)
+        );
+        const qty = Number(selectedMat?.quantity) || 0;
+        setSelectedMaterialQty(qty);
+
+        // Reset processed & balance when material changes
+        updated = { ...updated, processed_quantity: "", balance_quantity: "" };
+      }
+
+      // ✅ When processed quantity changes — auto-calc balance
+      if (name === "processed_quantity") {
+        const processed = Number(value) || 0;
+        const balance = selectedMaterialQty - processed;
+        updated = { ...updated, balance_quantity: balance.toString() };
+      }
+
+      return updated;
+    });
   };
+
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -302,18 +357,18 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     material_details: "Material ID",
     program_no: "Programer Number",
     program_date: "Program Date",
-    processed_quantity: "Planned Quantity",
+    processed_quantity: "Processed Quantity",
     balance_quantity: "Balance Quantity",
     used_weight: "Used Weight (Kg)",
-    number_of_sheets: "Components per Sheet",
+    number_of_sheets: "Number of Sheets",
     cut_length_per_sheet: "Cut Length per Sheet",
     pierce_per_sheet: "Pierce per Sheet",
-    processed_mins_per_sheet: "Planned Minutes per Sheet",
-    total_planned_hours: "Planned Total Hours",
+    processed_mins_per_sheet: "Minutes Processed per Sheet",
+    total_planned_hours: "Total Processed Hours",
     total_meters: "Total Meters",
     total_piercing: "Total Piercings",
     total_used_weight: "Total Used Weight (Kg)",
-    total_no_of_sheets: "Total Components",
+    total_no_of_sheets: "Total No.of Sheets",
     created_by: "Created By",
   };
 
@@ -343,7 +398,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl pt-2">
+      <div className="w-full max-w-6xl mx-auto bg-white rounded-2xl pt-2">
         {/* Progress Steps */}
         <StepProgressBar
           steps={["Programer Details", "Planning Data"]}
@@ -354,56 +409,30 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
         <div className="mt-8 space-y-6">
           {/* --- Step 1 --- */}
-          {currentStep === 1 && (
-            <div className="grid md:grid-cols-2 gap-6">
-              {["program_no", "program_date"].map((key) => (
-                <div key={key} className="flex flex-col space-y-1.5">
-                  <label
-                    htmlFor={key}
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    {LABELS[key as keyof ProgramerFormData]}
-                  </label>
-                  <input
-                    type={key === "program_date" ? "date" : "text"}
-                    name={key}
-                    id={key}
-                    value={formData[key as keyof ProgramerFormData]}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    placeholder={LABELS[key as keyof ProgramerFormData]}
-                    className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors[key]
-                      ? "border-red-500 focus:ring-red-400"
-                      : "border-gray-300 focus:ring-blue-500"
-                      }`}
-                  />
-                  {formErrors[key] && (
-                    <span className="text-red-500 text-xs">{formErrors[key]}</span>
-                  )}
-                </div>
-              ))}
 
-              {/* ✅ Material Dropdown */}
+          {currentStep === 1 && (
+            <div className="space-y-6">
+              {/* ✅ Row 1: Material Dropdown (full width) */}
               <div className="flex flex-col space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  Material
-                </label>
+                <label className="text-sm font-medium text-gray-700">Material</label>
                 <select
                   name="material_details"
                   value={formData.material_details}
                   onChange={handleChange}
-                  className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${
-                    formErrors.material_details
-                      ? "border-red-500 focus:ring-red-400"
-                      : "border-gray-300 focus:ring-blue-500"
-                  }`}
+                  className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.material_details
+                    ? "border-red-500 focus:ring-red-400"
+                    : "border-gray-300 focus:ring-blue-500"
+                    }`}
                 >
                   <option value="">Select Material</option>
-                  {materials.map((mat) => (
-                    <option key={mat.id} value={mat.id}>
-                      {mat.mat_type} ({mat.mat_grade}) - {mat.thick}mm × {mat.width} × {mat.length}
-                    </option>
-                  ))}
+                  {materials
+                    .filter((mat) => mat.programer_status === "pending")
+                    .map((mat) => (
+                      <option key={mat.id} value={mat.id}>
+                        {mat.mat_type} ({mat.mat_grade}) - {mat.thick}mm × {mat.width} ×{" "}
+                        {mat.length}
+                      </option>
+                    ))}
                 </select>
                 {formErrors.material_details && (
                   <span className="text-red-500 text-xs">
@@ -411,19 +440,10 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                   </span>
                 )}
               </div>
-              
-            </div>
-          )}
 
-          {/* --- Step 2 --- */}
-          {currentStep === 2 && (
-            <div className="grid md:grid-cols-3 gap-6">
-              {Object.keys(formData)
-                .filter(
-                  (k) =>
-                    !["program_no", "program_date", "product_details", "created_by", "material_details"].includes(k)
-                )
-                .map((key) => (
+              {/* ✅ Row 2: Program No & Program Date (side by side) */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {["program_no", "program_date"].map((key) => (
                   <div key={key} className="flex flex-col space-y-1.5">
                     <label
                       htmlFor={key}
@@ -432,7 +452,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                       {LABELS[key as keyof ProgramerFormData]}
                     </label>
                     <input
-                      type="text"
+                      type={key === "program_date" ? "date" : "text"}
                       name={key}
                       id={key}
                       value={formData[key as keyof ProgramerFormData]}
@@ -449,9 +469,107 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                     )}
                   </div>
                 ))}
-
+              </div>
             </div>
           )}
+
+
+          {/* --- Step 2 --- */}
+          {currentStep === 2 && (
+            <div className="space-y-8">
+              {/* 🔹 User Input Fields */}
+              <section>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  User Input Fields
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {[
+                    "processed_quantity",
+                    "used_weight",
+                    "number_of_sheets",
+                    "cut_length_per_sheet",
+                    "pierce_per_sheet",
+                    "processed_mins_per_sheet",
+                  ].map((key) => (
+                    <div key={key} className="flex flex-col space-y-1.5">
+                      <label
+                        htmlFor={key}
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        {LABELS[key as keyof ProgramerFormData]}
+                      </label>
+                      <input
+                        type="text"
+                        name={key}
+                        id={key}
+                        value={formData[key as keyof ProgramerFormData]}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        placeholder={LABELS[key as keyof ProgramerFormData]}
+                        className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors[key]
+                          ? "border-red-500 focus:ring-red-400"
+                          : "border-gray-300 focus:ring-blue-500"
+                          }`}
+                      />
+                      {formErrors[key] && (
+                        <span className="text-red-500 text-xs">{formErrors[key]}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* 🔹 Auto-Calculated Fields */}
+              <section>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  Auto-Calculated Fields
+                  <span className="text-xs text-gray-500 font-normal">
+                    (read-only values calculated automatically)
+                  </span>
+                </h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {[
+                    "balance_quantity",
+                    "total_planned_hours",
+                    "total_meters",
+                    "total_piercing",
+                    "total_used_weight",
+                    "total_no_of_sheets",
+                  ].map((key) => (
+                    <div key={key} className="flex flex-col space-y-1.5">
+                      <label
+                        htmlFor={key}
+                        className="text-sm font-medium text-gray-700 flex items-center gap-2"
+                      >
+                        {LABELS[key as keyof ProgramerFormData]}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-4 h-4 text-gray-400"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v9a1 1 0 001 1h10a1 1 0 001-1v-9a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 6V6a2 2 0 114 0v2H8zm2 6a2 2 0 100-4 2 2 0 000 4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </label>
+                      <input
+                        type="text"
+                        name={key}
+                        id={key}
+                        value={formData[key as keyof ProgramerFormData]}
+                        readOnly
+                        className="border border-gray-200 bg-gray-50 text-gray-600 rounded-lg px-3 py-2 cursor-not-allowed"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          )}
+
         </div>
 
         {/* --- Navigation Buttons --- */}

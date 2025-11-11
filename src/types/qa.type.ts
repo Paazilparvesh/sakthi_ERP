@@ -14,10 +14,13 @@ export interface ProgramerDetailProps {
 
 export interface QAData {
   product_id: number;
-  product_options: MaterialInwardForm[];
-  plan_products: PlanProduct[];
-  schedules: Schedule[];
-  schedule_processes: ScheduleProcess[];
+  product_details?: number;
+  material_details?: number;
+  status?: string;
+  // product_options: MaterialInwardForm[];
+  // plan_products: PlanProduct[];
+  // schedules: Schedule[];
+  // schedule_processes: ScheduleProcess[];
 }
 export interface MaterialInwardForm {
   // id: number;

@@ -14,7 +14,7 @@ export interface ProductType {
   customer_name: string;
   customer_dc_no: string;
   contact_no: string;
-  status?: string;
+  programer_status?: string;
   outward_status?: string;
   qa_status?: string;
   created_by?: string;
@@ -34,6 +34,9 @@ export interface Material {
   total_weight: number | string;
   stock_due: number | string;
   remarks: string;
+  programer_status?: string;
+  qa_status?: string;
+  acc_status?: string;
 }
 
 export interface Company {

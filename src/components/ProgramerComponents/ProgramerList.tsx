@@ -38,12 +38,12 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
                             <td className="px-4 py-3 border text-center">{item.created_by}</td>
                             <td className="px-4 py-3 border text-center">
                                 <span
-                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${item.status?.toLowerCase() === "completed"
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${item.programer_status?.toLowerCase() === "completed"
                                         ? "bg-green-100 text-green-700"
                                         : "bg-yellow-100 text-yellow-700"
                                         }`}
                                 >
-                                    {item.status}
+                                    {item.programer_status}
                                 </span>
                             </td>
                             <td className="px-4 py-3 border text-center">
@@ -89,10 +89,10 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
                         </div>
                         <div className="flex justify-between mb-1">
                             <span className="font-semibold text-slate-700">Status:</span>
-                            {item.status?.toLowerCase() === "completed" ? (
+                            {item.programer_status?.toLowerCase() === "completed" ? (
                                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                             ) : (
-                                <span className="text-yellow-600 font-medium">{item.status}</span>
+                                <span className="text-yellow-600 font-medium">{item.programer_status}</span>
                             )}
                         </div>
                         <button

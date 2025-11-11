@@ -31,7 +31,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [program, setProgram] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
-  const [view, setView] = useState<"list" | "detail" | "form" | "qaForm" | "accountForm">("list");
+  const [view, setView] = useState<"list" | "detail" | "qaForm" | "accountForm">("list");
   const [loading, setLoading] = useState(true);
 
   // --------------------------------
@@ -113,8 +113,8 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
   }
 
   return (
-    <div className=" p-6 sm:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-4">
+      <div className="max-w-8xl mx-auto">
         <h1 className="text-3xl font-bold text-center text-slate-800 mb-8">
           Outward Dashboard
         </h1>
@@ -123,6 +123,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
           <OutwardList
             product={products}
             onView={handleView}
+            role={role}
             getStatusColor={getStatusColor}
           />
         )}
@@ -133,7 +134,6 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
             program={filteredProgram}
             onBack={handleBack}
             getStatusColor={getStatusColor}
-            onAddProcess={() => setView("form")}
             onProceedQA={() => setView("qaForm")}
             onProceedAccount={() => setView("accountForm")}
           />
@@ -142,9 +142,10 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
         {view === "qaForm" && selectedProduct && (
           <QAForm
             productId={selectedProduct.id}
-            companyName={selectedProduct.Company_name}
+            companyName={selectedProduct.company_name}
+            materials={selectedProduct.materials}
             onBack={() => setView("list")}
-            onSubmitSuccess={fetchProducts} // ✅ optional refresh
+            onSubmitSuccess={fetchProducts}
           />
         )}
 
@@ -152,20 +153,13 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
         {view === "accountForm" && selectedProduct && (
           <AccountForm
             productId={selectedProduct.id}
-            companyName={selectedProduct.Company_name}
+            companyName={selectedProduct.company_name}
+            materials={selectedProduct.materials}
             onBack={() => setView("list")}
-            onSubmitSuccess={fetchProducts} // optional refresh after submission
+            onSubmitSuccess={fetchProducts}
           />
         )}
 
-
-        {/* {view === "form" && selectedProduct && (
-          <AddProcessForm
-            product={selectedProduct}
-            onClose={handleFormSuccess}
-            onBack={() => setView("list")}
-          />
-        )} */}
       </div>
     </div>
   );
