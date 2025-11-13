@@ -53,7 +53,6 @@ const Dashboard: React.FC = () => {
       );
     }
 
-    // const dashboard = dashboardMap[user.role_type as UserRole];
     const normalizedRole = user?.role_type?.toLowerCase() as UserRole;
     const dashboard = dashboardMap[normalizedRole];
 

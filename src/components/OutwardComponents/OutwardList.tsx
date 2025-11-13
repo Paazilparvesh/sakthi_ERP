@@ -1,5 +1,4 @@
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductType } from "@/types/inward.type";
@@ -17,9 +16,7 @@ export const OutwardList: React.FC<ProductListProps> = ({
   role,
   getStatusColor,
 }) => (
-  <Card>
-    <CardContent className="p-0">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto w-full">
         <table className="w-full border-collapse text-sm sm:text-base">
           <thead>
             <tr className="border-b bg-slate-100 text-center">
@@ -38,8 +35,8 @@ export const OutwardList: React.FC<ProductListProps> = ({
             </tr>
           </thead>
           <tbody>
-            {product.map((p) => (
-              <tr key={p.id} className="border hover:bg-slate-50">
+            {product.map((p, i) => (
+              <tr key={i} className="border hover:bg-slate-50">
                 <td className="px-4 py-2 border text-center">{p.serial_number}</td>
                 <td className="px-4 py-2 border">{p.company_name}</td>
                 <td className="px-4 py-2 border">{p.customer_name}</td>
@@ -70,6 +67,4 @@ export const OutwardList: React.FC<ProductListProps> = ({
           </tbody>
         </table>
       </div>
-    </CardContent>
-  </Card>
 );

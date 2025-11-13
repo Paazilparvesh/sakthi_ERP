@@ -40,7 +40,7 @@ All colors MUST be HSL.
 
     --table-header: 217 91% 60%;
     --table-row-hover: 217 91% 97%;
-    
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -79,10 +79,10 @@ All colors MUST be HSL.
     --border: 217 33% 18%;
     --input: 217 33% 18%;
     --ring: 217 91% 60%;
-    
+
     --table-header: 217 91% 60%;
     --table-row-hover: 217 33% 25%;
-    
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -107,5 +107,56 @@ All colors MUST be HSL.
 
 
 input {
-  autoComplete:var(--muted)
+  autoComplete: var(--muted)
+}
+
+
+
+
+
+/* Base Layout Styles for LOgout Confirmation */
+.animate-fadeIn {
+  animation: fadeIn .2s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn .2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
+/* Hide Scrollbars (Chrome, Edge, Safari) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide Scrollbars (Firefox) */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+
+/* Hide Scrollbars (Internet Explorer/Old Edge) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
 }

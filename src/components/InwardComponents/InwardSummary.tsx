@@ -5,20 +5,20 @@ const InwardSummary: React.FC<InwardProps> = ({ formData }) => {
         <div className="bg-white p-6 sm:p-8 rounded-2xl border border-gray-200 w-full max-w-7xl mx-auto mt-10 transition-all">
             {/* Header */}
             <div className="flex justify-between items-center mb-6 border-b pb-3">
-                <h2 className="text-2xl font-semibold text-gray-800">Summary</h2>
+                <h2 className="text-2xl font-semibold text-gray-800">Inward Product Details</h2>
             </div>
 
             {/* Basic Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-10 p-4">
                 {[
-                    { label: "Serial No", value: formData.serial_number },
+                    { label: "Serial No.", value: formData.serial_number },
+                    { label: "Inward Slip No.", value: formData.inward_slip_number },
                     { label: "Date", value: formData.date },
-                    { label: "Inward Slip No", value: formData.inward_slip_number },
-                    { label: "WO No", value: formData.worker_no },
+                    { label: "Work Order No.", value: formData.worker_no },
                     { label: "Company Name", value: formData.company_name },
                     { label: "Customer Name", value: formData.customer_name },
-                    { label: "Customer DC No", value: formData.customer_dc_no },
-                    { label: "Mobile No", value: formData.contact_no },
+                    { label: "Customer Document No.", value: formData.customer_dc_no },
+                    { label: "Mobile No.", value: formData.contact_no },
                     { label: "Color", value: formData.color },
                 ].map(({ label, value }) => (
                     <div key={label} className="flex flex-col">
@@ -28,6 +28,11 @@ const InwardSummary: React.FC<InwardProps> = ({ formData }) => {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6 border-b pb-3">
+                <h2 className="text-2xl font-semibold text-gray-800">Product Materials Details</h2>
             </div>
 
             {/* Material Table */}

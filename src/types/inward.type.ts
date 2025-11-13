@@ -1,6 +1,8 @@
 export interface InwardProps {
   formData: ProductType;
   setFormData: React.Dispatch<React.SetStateAction<ProductType>>;
+  setFormErrors?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  formErrors?: Record<string, string>;
 }
 
 export interface ProductType {
@@ -14,17 +16,21 @@ export interface ProductType {
   customer_name: string;
   customer_dc_no: string;
   contact_no: string;
+
   programer_status?: string;
   outward_status?: string;
   qa_status?: string;
   created_by?: string;
+
   materials: Material[];
 }
 
 export interface Material {
   id?: number;
+
   mat_type: string;
   mat_grade: string;
+
   thick: number | string;
   width: number | string;
   length: number | string;
@@ -34,6 +40,7 @@ export interface Material {
   total_weight: number | string;
   stock_due: number | string;
   remarks: string;
+
   programer_status?: string;
   qa_status?: string;
   acc_status?: string;

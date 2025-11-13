@@ -3,14 +3,16 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 // Components
-import MaterialForm from "@/components/InwardComponents/InwardForm";
-import ProductTable from "@/components/InwardComponents/InwardTable";
+import InwardForm from "@/components/InwardComponents/InwardForm";
+import MaterialTable from "@/components/InwardComponents/InwardTable";
 import InspectionDetails from "@/components/InwardComponents/InwardSummary";
 import { StepProgressBar } from "@/components/ReusableComponents/StepProgressBar";
 // Types
 import { ProductType } from "@/types/inward.type";
-// api
+// Utils
 import { fetchJSON } from "@/utils/api";
+import { validateAllFields } from "@/utils/inwardValidation";
+import { validateAllMaterials } from "@/utils/materialValidation";
 
 
 
@@ -21,8 +23,11 @@ const InwardDashboard: React.FC = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [nextSerial, setNextSerial] = useState("0001");
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+
   const API_URL = import.meta.env.VITE_API_URL;
-  const steps = ["Material Details", "Add Product", "Summary"];
+  const steps = ["Add Product", "Material Details", "Summary"];
 
   const getTodayDate = (): string => new Date().toISOString().split("T")[0];
 
@@ -80,99 +85,41 @@ const InwardDashboard: React.FC = () => {
     }));
   }, [nextSerial]);
 
-  const validateStep1 = (formData: ProductType): boolean => {
-    const errors: string[] = [];
-
-    if (!formData.customer_name.trim()) errors.push("Company name");
-    if (!formData.customer_name.trim()) errors.push("Customer name");
-    if (!formData.customer_dc_no.trim() || !/^\d+$/.test(formData.customer_dc_no))
-      errors.push("Customer No");
-
-    if (!formData.contact_no.trim()) errors.push("Mobile No");
-    else if (!/^\d+$/.test(formData.contact_no)) errors.push("Mobile must contain only digits");
-    else if (formData.contact_no.trim().length < 10) errors.push("Mobile must be at least 10 digits");
-
-    if (!formData.date) errors.push("Date");
-    if (!formData.serial_number.trim()) errors.push("Serial number");
-
-    if (errors.length > 0) {
-      toast({
-        title: "Incomplete Form",
-        description: "Please fill all required fields correctly.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const validateStep2 = (formData: ProductType): boolean => {
-
-    const materials = formData.materials || [];
-    // ✅ Ensure at least one row exists
-    if (materials.length === 0) {
-      toast({
-        title: "No Materials Added",
-        description: "Please add at least one material before continuing.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    for (let i = 0; i < materials.length; i++) {
-      const mat = materials[i];
-      // ✅ Validate Length, Breadth, Height
-      if (
-        mat.thick === "" ||
-        mat.width === "" ||
-        mat.length === "" ||
-        mat.unit_weight === "" ||
-        mat.total_weight === "" ||
-        mat.quantity === "" ||
-        mat.density === ""
-      ) {
-        toast({
-          title: "Incomplete Dimensions",
-          description: `Please fill all fields (Thick × Width × Length × Weight) for row ${i + 1}.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // ✅ Validate numeric inputs
-      if (
-        isNaN(Number(mat.thick)) ||
-        isNaN(Number(mat.width)) ||
-        isNaN(Number(mat.length)) ||
-        isNaN(Number(mat.unit_weight)) ||
-        isNaN(Number(mat.density)) ||
-        isNaN(Number(mat.total_weight)) ||
-        isNaN(Number(mat.quantity))
-
-      ) {
-        toast({
-          title: "Invalid Input",
-          description: `All values must be numeric in row ${i + 1}.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-    }
-
-    return true;
-  };
-
   // 🔹 Step Navigation Handlers
   const handleNext = () => {
-    if (step === 1 && !validateStep1(formData)) return;
-    if (step === 2 && !validateStep2(formData)) return;
-    if (step < 3) setStep((prev) => prev + 1);
+    if (step === 1) {
+      const errors = validateAllFields(formData);
+      setFormErrors(errors);
+
+      if (Object.keys(errors).length > 0) {
+        toast({
+          title: "Invalid Input",
+          description: "Please correct highlighted fields before proceeding.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (step === 2) {
+      const materialErrors = validateAllMaterials(formData.materials);
+
+      if (Object.keys(materialErrors).length > 0) {
+        toast({
+          title: "Invalid Material Rows",
+          description: "Please Fill all the Material Input.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    if (step < 3) setStep(step + 1);
   };
 
   const handleBack = () => step > 1 && setStep((prev) => prev - 1);
 
-  // 🔹 Reset Form
+  // Reset Form
   const resetForm = () => {
     setStep(1);
     setFormData({
@@ -204,7 +151,7 @@ const InwardDashboard: React.FC = () => {
     setShowModal(false);
   };
 
-
+  // Add Full Product
   const handleConfirm = async () => {
     if (isSubmitting) return; // Prevent double-click submissions
     setIsSubmitting(true); // Disable button + start loading  
@@ -267,7 +214,7 @@ const InwardDashboard: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center py-6 px-4 sm:px-6 lg:px-8">
-      <div className="w-full space-y-6">
+      <div className="w-full">
         {/* Title */}
         <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold text-center text-gray-800 leading-tight">
           Material Inward Report
@@ -281,9 +228,9 @@ const InwardDashboard: React.FC = () => {
 
 
         {/* Step Components */}
-        <div className="w-full space-y-6">
-          {step === 1 && <MaterialForm formData={formData} setFormData={setFormData} />}
-          {step === 2 && <ProductTable formData={formData} setFormData={setFormData} />}
+        <div className="w-full">
+          {step === 1 && <InwardForm formData={formData} setFormData={setFormData} setFormErrors={setFormErrors} formErrors={formErrors} />}
+          {step === 2 && <MaterialTable formData={formData} setFormData={setFormData} />}
           {step === 3 && <InspectionDetails formData={formData} setFormData={setFormData} />}
         </div>
 

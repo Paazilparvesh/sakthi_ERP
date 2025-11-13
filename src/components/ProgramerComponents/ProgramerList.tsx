@@ -6,18 +6,18 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
     return (
         <div className="overflow-x-auto w-full">
             {/* Desktop Table */}
-            <table className="hidden md:table min-w-full text-sm text-left text-slate-700 border-separate border-spacing-0">
-                <thead className="text-xs text-blue-600 uppercase border bg-slate-100 sticky top-0 z-10 text-center">
-                    <tr>
-                        <th className="px-4 py-3 font-semibold border">Serial No.</th>
-                        <th className="px-4 py-3 font-semibold border">Date</th>
-                        <th className="px-4 py-3 font-semibold border">Company Name</th>
-                        <th className="px-4 py-3 font-semibold border">Customer Name</th>
-                        <th className="px-4 py-3 font-semibold border">Color</th>
-                        <th className="px-4 py-3 font-semibold border">Mobile</th>
-                        <th className="px-4 py-3 font-semibold border">Created By</th>
-                        <th className="px-4 py-3 font-semibold border">Status</th>
-                        <th className="px-4 py-3 font-semibold text-center border">Action</th>
+            <table className="w-full border-collapse text-sm sm:text-base">
+                <thead>
+                    <tr className="border-b bg-gray-300 text-center">
+                        <th className="px-2 py-2 border w-[7%]">S. No.</th>
+                        <th className="px-2 py-2 border w-[12%]">Date</th>
+                        <th className="px-2 py-2 border w-[18%]">Company Name</th>
+                        <th className="px-2 py-2 border w-[18%]">Customer Name</th>
+                        <th className="px-2 py-2 border w-[8%]">Color</th>
+                        <th className="px-2 py-2 border w-[10%]">Mobile</th>
+                        <th className="px-2 py-2 border w-[10%]">Created By</th>
+                        <th className="px-2 py-2 border w-[6%]">Status</th>
+                        <th className="px-2 py-2 border w-[6%]">Action</th>
                     </tr>
                 </thead>
 
@@ -58,52 +58,6 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
                     ))}
                 </tbody>
             </table>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden space-y-4">
-                {data.slice().reverse().map((item, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow p-4 border border-gray-200">
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">Serial No:</span>
-                            <span className="text-slate-900">{item.serial_number}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">Company Name:</span>
-                            <span className="text-slate-600">{item.company_name}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">Customer Name:</span>
-                            <span className="text-slate-600">{item.customer_name}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">Date:</span>
-                            <span className="text-slate-600">{item.date}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">Worker No:</span>
-                            <span className="text-slate-600">{item.worker_no}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">color:</span>
-                            <span className="text-slate-600">{item.color}</span>
-                        </div>
-                        <div className="flex justify-between mb-1">
-                            <span className="font-semibold text-slate-700">Status:</span>
-                            {item.programer_status?.toLowerCase() === "completed" ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            ) : (
-                                <span className="text-yellow-600 font-medium">{item.programer_status}</span>
-                            )}
-                        </div>
-                        <button
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full mt-2 flex items-center justify-center gap-2"
-                            onClick={() => onView(item)}
-                        >
-                            <Eye className="h-4 w-4" /> View
-                        </button>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };

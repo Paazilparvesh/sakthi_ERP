@@ -20,6 +20,14 @@ const ProgramerDashboard: React.FC = () => {
   const [view, setView] = useState<"list" | "detail" | "form">("list");
   const [selectedItem, setSelectedItem] = useState<ProductType | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+
+
   const API_URL = import.meta.env.VITE_API_URL;
 
 
@@ -46,6 +54,35 @@ const ProgramerDashboard: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+
+  const filteredData = React.useMemo(() => {
+    return FormData.reverse().filter((item) => {
+      const matchesSearch =
+        item.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.serial_number?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" || item.programer_status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [FormData, searchQuery, statusFilter]);
+
+  // PAGINATION
+  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+
+  const paginatedData = React.useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredData.slice(start, start + rowsPerPage);
+  }, [filteredData, currentPage]);
+
+
 
   // Navigation Handlers
   const handleViewDetail = (item: ProductType) => {
@@ -89,20 +126,76 @@ const ProgramerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-4">
+    <div className="p-12">
       <div className="max-w-8xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-slate-800 mb-6 sm:mb-8">
-          Programer Sheet
-        </h1>
+        <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
 
-        <Card className="border-none shadow-none">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800">
+            Programer Sheet
+          </h1>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+
+            {/* Search Input */}
+            <input
+              type="text"
+              placeholder="Search by company, customer or serial..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border px-4 py-3 rounded-full w-full sm:w-72 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+            />
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border px-4 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-600"
+            >
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+            </select>
+
+          </div>
+        </div>
+
+
+        <Card className="border-none shadow-none bg-transparent">
           <CardContent className="p-0">
             {/* ---------------------- LIST VIEW ---------------------- */}
             {view === "list" && (
-              <ProgramList
-                data={FormData}
-                onView={handleViewDetail} />
+              <>
+                <ProgramList data={paginatedData} onView={handleViewDetail} />
+
+                {/* Pagination Buttons */}
+                {totalPages > 1 && (
+                  <div className="flex justify-end items-center gap-3 mt-6">
+
+                    <button
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                      className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                    >
+                      Prev
+                    </button>
+
+                    <span className="font-medium text-slate-700">
+                      Page {currentPage} / {totalPages}
+                    </span>
+
+                    <button
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                    >
+                      Next
+                    </button>
+
+                  </div>
+                )}
+              </>
             )}
+
 
             {/* --------------------- DETAIL VIEW --------------------- */}
             {view === "detail" && selectedItem && (
