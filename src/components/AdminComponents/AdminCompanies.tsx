@@ -1,318 +1,91 @@
-// import React, { useEffect, useState, useCallback } from "react";
-// import { Button } from "@/components/ui/button";
-// import { Card } from "@/components/ui/card";
-// import { Input } from "@/components/ui/input";
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-// import { Label } from "@/components/ui/label";
-// import { Loader2, Plus } from "lucide-react";
-// import { useToast } from "@/components/ui/use-toast";
-
-// interface Company {
-//   id: number;
-//   company_name: string;
-//   customer_name: string;
-//   company_address: string;
-//   contact_no: string;
-//   company_email: string;
-//   customer_dc_no: string;
-// }
-
-// const AdminCompanies: React.FC = () => {
-//   const API_URL = import.meta.env.VITE_API_URL;
-//   const { toast } = useToast();
-
-//   const [companies, setCompanies] = useState<Company[]>([]);
-//   const [loading, setLoading] = useState(false);
-//   const [open, setOpen] = useState(false);
-
-//   const [formData, setFormData] = useState({
-//     company_name: "",
-//     customer_name: "",
-//     company_address: "",
-//     contact_no: "",
-//     company_email: "",
-//     customer_dc_no: "",
-//   });
-
-//   /* ---------------------- Fetch Companies ---------------------- */
-//   const fetchCompanies = useCallback(async () => {
-//     setLoading(true);
-//     try {
-//       const response = await fetch(`${API_URL}/api/get_companys/`);
-//       if (!response.ok) throw new Error("Failed to fetch company list");
-
-//       const data = await response.json();
-//       setCompanies(data);
-//     } catch (error) {
-//       console.error(error);
-//       toast({
-//         variant: "destructive",
-//         title: "Error",
-//         description: "Unable to load companies. Please check the server.",
-//       });
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, [API_URL, toast]);
-
-//   useEffect(() => {
-//     fetchCompanies();
-//   }, [fetchCompanies]);
-
-//   /* ---------------------- Handle Form ---------------------- */
-//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-//   };
-
-//   const handleAddCompany = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     try {
-//       const response = await fetch(`${API_URL}/api/add_company/`, {
-//         method: "POST",
-//         headers: { "Content-Type": "application/json" },
-//         body: JSON.stringify(formData),
-//       });
-
-//       const data = await response.json();
-
-//       if (!response.ok || !data.status) {
-//         throw new Error(data.message || data.error || "Failed to add company");
-//       }
-
-//       toast({
-//         title: "Success",
-//         description: "Company added successfully.",
-//       });
-
-//       setOpen(false);
-//       setFormData({
-//         company_name: "",
-//         customer_name: "",
-//         company_address: "",
-//         contact_no: "",
-//         company_email: "",
-//         customer_dc_no: "",
-//       });
-
-//       fetchCompanies(); // refresh list
-//     } catch (error) {
-//       console.error(error);
-//       toast({
-//         variant: "destructive",
-//         title: "Error",
-//         description:
-//           error instanceof Error ? error.message : "Unexpected error occurred.",
-//       });
-//     }
-//   };
-
-//   /* ---------------------- Render ---------------------- */
-//   return (
-//     <div className="text-gray-700 space-y-6">
-//       {/* Header */}
-//       <div className="flex justify-between items-center">
-//         <h2 className="text-2xl font-semibold">Manage Companies</h2>
-//         <Button
-//           onClick={() => setOpen(true)}
-//           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-//         >
-//           <Plus className="w-4 h-4" /> Add Company
-//         </Button>
-//       </div>
-
-//       {/* Loading */}
-//       {loading ? (
-//         <div className="flex justify-center items-center h-64 text-gray-600">
-//           <Loader2 className="animate-spin mr-2" /> Loading companies...
-//         </div>
-//       ) : companies.length === 0 ? (
-//         <p className="text-center text-gray-500 italic">No companies found.</p>
-//       ) : (
-//         <Card className="border shadow-sm overflow-x-auto">
-//           <table className="w-full border-collapse text-sm sm:text-base">
-//             <thead>
-//               <tr className="bg-slate-100 border-b text-center">
-//                 <th className="px-4 py-2 border">S.No</th>
-//                 <th className="px-4 py-2 border">Company Name</th>
-//                 <th className="px-4 py-2 border">Customer Name</th>
-//                 <th className="px-4 py-2 border">Address</th>
-//                 <th className="px-4 py-2 border">Contact No</th>
-//                 <th className="px-4 py-2 border">Email</th>
-//                 <th className="px-4 py-2 border">Customer DC No</th>
-//               </tr>
-//             </thead>
-//             <tbody>
-//               {companies.map((comp, index) => (
-//                 <tr
-//                   key={comp.id}
-//                   className="border-b hover:bg-slate-50 text-center transition"
-//                 >
-//                   <td className="border px-4 py-2">{index + 1}</td>
-//                   <td className="border px-4 py-2 font-medium">
-//                     {comp.company_name}
-//                   </td>
-//                   <td className="border px-4 py-2">{comp.customer_name}</td>
-//                   <td className="border px-4 py-2">{comp.company_address}</td>
-//                   <td className="border px-4 py-2">{comp.contact_no}</td>
-//                   <td className="border px-4 py-2">{comp.company_email}</td>
-//                   <td className="border px-4 py-2">{comp.customer_dc_no}</td>
-//                 </tr>
-//               ))}
-//             </tbody>
-//           </table>
-//         </Card>
-//       )}
-
-//       {/* ---------------------- Add Company Modal ---------------------- */}
-//       <Dialog open={open} onOpenChange={setOpen}>
-//         <DialogContent className="sm:max-w-lg">
-//           <DialogHeader>
-//             <DialogTitle>Add New Company</DialogTitle>
-//           </DialogHeader>
-
-//           <form onSubmit={handleAddCompany} className="space-y-4 mt-3">
-//             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-//               <div>
-//                 <Label>Company Name *</Label>
-//                 <Input
-//                   name="company_name"
-//                   value={formData.company_name}
-//                   onChange={handleChange}
-//                   required
-//                 />
-//               </div>
-//               <div>
-//                 <Label>Customer Name *</Label>
-//                 <Input
-//                   name="customer_name"
-//                   value={formData.customer_name}
-//                   onChange={handleChange}
-//                   required
-//                 />
-//               </div>
-//               <div className="md:col-span-2">
-//                 <Label>Company Address</Label>
-//                 <Input
-//                   name="company_address"
-//                   value={formData.company_address}
-//                   onChange={handleChange}
-//                 />
-//               </div>
-//               <div>
-//                 <Label>Contact No</Label>
-//                 <Input
-//                   name="contact_no"
-//                   value={formData.contact_no}
-//                   onChange={handleChange}
-//                 />
-//               </div>
-//               <div>
-//                 <Label>Email</Label>
-//                 <Input
-//                   type="email"
-//                   name="company_email"
-//                   value={formData.company_email}
-//                   onChange={handleChange}
-//                 />
-//               </div>
-//               <div>
-//                 <Label>Customer DC No</Label>
-//                 <Input
-//                   name="customer_dc_no"
-//                   value={formData.customer_dc_no}
-//                   onChange={handleChange}
-//                 />
-//               </div>
-//             </div>
-
-//             <DialogFooter>
-//               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-//                 Cancel
-//               </Button>
-//               <Button
-//                 type="submit"
-//                 className="bg-blue-600 hover:bg-blue-700 text-white"
-//               >
-//                 Save
-//               </Button>
-//             </DialogFooter>
-//           </form>
-//         </DialogContent>
-//       </Dialog>
-//     </div>
-//   );
-// };
-
-// export default AdminCompanies;
-
-
-
-
-
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Upload, FileText, X } from "lucide-react";
+import { Loader2, Plus, Upload, FileText, X, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
+/* -------------------- TYPES (MATCH BACKEND) -------------------- */
 interface Company {
   id: number;
   company_name: string;
   customer_name: string;
-  company_address: string;
-  contact_no: string;
-  company_email: string;
-  customer_dc_no: string;
+  contact_no?: string;
+  customer_dc_no?: string;
 }
 
 interface BulkCompany {
   company_name: string;
   customer_name: string;
-  company_address: string;
-  contact_no: string;
-  company_email: string;
-  customer_dc_no: string;
+  contact_no?: string;
+  customer_dc_no?: string;
 }
 
+/* -------------------- COMPONENT -------------------- */
 const AdminCompanies: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL;
   const { toast } = useToast();
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+
+  // ADD & BULK UPLOAD modal
+  const [openModal, setOpenModal] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
+
+  // EDIT MODAL
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Company>>({});
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Bulk Upload
   const [bulkUploadLoading, setBulkUploadLoading] = useState(false);
   const [previewCompanies, setPreviewCompanies] = useState<BulkCompany[]>([]);
-  const [uploadedFileName, setUploadedFileName] = useState<string>("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
 
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+
+  // Add Company Form
   const [formData, setFormData] = useState({
     company_name: "",
     customer_name: "",
-    company_address: "",
     contact_no: "",
-    company_email: "",
     customer_dc_no: "",
   });
 
-  /* ---------------------- Fetch Companies ---------------------- */
+  // Search
+  const [query, setQuery] = useState("");
+
+  /* -------------------- FETCH COMPANIES -------------------- */
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/get_companys/`);
-      if (!response.ok) throw new Error("Failed to fetch company list");
-
-      const data = await response.json();
-      setCompanies(data);
-    } catch (error) {
-      console.error(error);
+      const resp = await fetch(`${API_URL}/api/get_companys/`);
+      const data = await resp.json();
+      setCompanies(Array.isArray(data) ? data : []);
+    } catch {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Unable to load companies. Please check the server.",
+        description: "Unable to load companies.",
       });
     } finally {
       setLoading(false);
@@ -323,568 +96,608 @@ const AdminCompanies: React.FC = () => {
     fetchCompanies();
   }, [fetchCompanies]);
 
-  /* ---------------------- Handle Form ---------------------- */
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  /* -------------------- HELPERS -------------------- */
+  const uniqueCompanies = useMemo(() => {
+    const seen = new Set();
+    return companies.filter((c) => {
+      const key = `${c.company_name.toLowerCase()}_${c.customer_name.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [companies]);
+
+  const filteredCompanies = useMemo(() => {
+    const q = query.toLowerCase().trim();
+    if (!q) return uniqueCompanies;
+
+    return uniqueCompanies.filter((c) =>
+      `${c.company_name} ${c.customer_name} ${c.contact_no} ${c.customer_dc_no}`
+        .toLowerCase()
+        .includes(q)
+    );
+  }, [uniqueCompanies, query]);
+
+  const totalPages = Math.ceil(filteredCompanies.length / rowsPerPage);
+
+  const currentRows = useMemo(() => {
+    const start = (currentPage - 1) * rowsPerPage;
+    return filteredCompanies.slice(start, start + rowsPerPage);
+  }, [currentPage, filteredCompanies]);
+
+
+  /* -------------------- ADD COMPANY -------------------- */
+  const handleChange = (e: any) => {
+    setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  const handleAddCompany = async (e: React.FormEvent) => {
+  const handleAddCompany = async (e: any) => {
     e.preventDefault();
-    
-    // Check for duplicates before adding
-    const isDuplicate = companies.some(
-      company => 
-        company.company_name.toLowerCase() === formData.company_name.toLowerCase() &&
-        company.customer_name.toLowerCase() === formData.customer_name.toLowerCase()
-    );
 
-    if (isDuplicate) {
-      toast({
-        variant: "destructive",
-        title: "Duplicate Company",
-        description: "A company with the same name and customer already exists.",
-      });
+    if (!formData.company_name.trim() || !formData.customer_name.trim()) {
+      toast({ variant: "destructive", title: "Company name & Customer name required" });
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/add_company/`, {
+      const resp = await fetch(`${API_URL}/api/add_company/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data = await resp.json();
+      if (!resp.ok || !data.status) throw new Error(data.message);
 
-      if (!response.ok || !data.status) {
-        throw new Error(data.message || data.error || "Failed to add company");
-      }
+      toast({ title: "Company added" });
+      setOpenModal(false);
 
-      toast({
-        title: "Success",
-        description: "Company added successfully.",
-      });
-
-      setOpen(false);
       setFormData({
         company_name: "",
         customer_name: "",
-        company_address: "",
         contact_no: "",
-        company_email: "",
         customer_dc_no: "",
       });
 
-      fetchCompanies(); // refresh list
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          error instanceof Error ? error.message : "Unexpected error occurred.",
-      });
+      fetchCompanies();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Add failed", description: err.message });
     }
   };
 
-  /* ---------------------- Bulk Upload Functions ---------------------- */
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* -------------------- BULK UPLOAD -------------------- */
+  const handleFileUpload = (e: any) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploadedFileName(file.name);
     setBulkUploadLoading(true);
 
-    // Check if it's an Excel file
-    if (!file.name.match(/\.(xlsx|xls|csv)$/)) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please upload an Excel file (.xlsx, .xls, or .csv)",
-      });
-      setBulkUploadLoading(false);
-      return;
-    }
-
     const reader = new FileReader();
-    
     reader.onload = (event) => {
       try {
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        
-        // Get first worksheet
-        const worksheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[worksheetName];
-        
-        // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          defval: "",
-          raw: false,
-          blankrows: false
+        const workbook = XLSX.read(event.target?.result, { type: "binary" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet);
+
+        const parsed: BulkCompany[] = [];
+
+        rows.forEach((row: any) => {
+          const company_name = row["company_name"] || row["Company Name"];
+          const customer_name = row["customer_name"] || row["Customer Name"];
+          if (!company_name || !customer_name) return;
+
+          parsed.push({
+            company_name,
+            customer_name,
+            contact_no: row["contact_no"] || "",
+            customer_dc_no: row["customer_dc_no"] || "",
+          });
         });
 
-        if (jsonData.length === 0) {
-          throw new Error("No data found in the Excel file");
-        }
-
-        const parsedCompanies: BulkCompany[] = [];
-        const seenCompanies = new Set();
-        let skippedRows = 0;
-        let duplicateCount = 0;
-
-        jsonData.forEach((row: any, index: number) => {
-          try {
-            // Skip completely empty rows
-            const rowValues = Object.values(row);
-            const isEmptyRow = rowValues.every(value => 
-              value === "" || value === null || value === undefined
-            );
-            
-            if (isEmptyRow) {
-              skippedRows++;
-              return;
-            }
-
-            // Function to find field value with multiple possible column names
-            const getFieldValue = (possibleNames: string[]): string => {
-              for (const name of possibleNames) {
-                if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
-                  return String(row[name]).trim();
-                }
-                
-                const normalizedName = name.toLowerCase().replace(/[\s_]+/g, '');
-                for (const key of Object.keys(row)) {
-                  const normalizedKey = key.toLowerCase().replace(/[\s_]+/g, '');
-                  if (normalizedKey === normalizedName && row[key] !== undefined && row[key] !== null && row[key] !== '') {
-                    return String(row[key]).trim();
-                  }
-                }
-              }
-              return '';
-            };
-
-            const companyName = getFieldValue(['company_name', 'company name', 'company', 'comp_name']);
-            const customerName = getFieldValue(['customer_name', 'customer name', 'customer', 'cust_name']);
-            const companyAddress = getFieldValue(['company_address', 'company address', 'address', 'comp_address']);
-            const contactNo = getFieldValue(['contact_no', 'contact no', 'contact', 'phone', 'mobile', 'contact_number']);
-            const companyEmail = getFieldValue(['company_email', 'company email', 'email', 'comp_email']);
-            const customerDcNo = getFieldValue(['customer_dc_no', 'customer dc no', 'dc no', 'dc_number', 'customer_dc']);
-
-            // Validate required fields
-            if (!companyName || !customerName) {
-              skippedRows++;
-              return;
-            }
-
-            // Create unique key for duplicate detection
-            const companyKey = `${companyName.toLowerCase().trim()}_${customerName.toLowerCase().trim()}`;
-            
-            // Check for duplicates within the same file
-            if (seenCompanies.has(companyKey)) {
-              duplicateCount++;
-              skippedRows++;
-              return;
-            }
-
-            seenCompanies.add(companyKey);
-            
-            parsedCompanies.push({
-              company_name: companyName,
-              customer_name: customerName,
-              company_address: companyAddress,
-              contact_no: contactNo,
-              company_email: companyEmail,
-              customer_dc_no: customerDcNo
-            });
-
-          } catch (error) {
-            skippedRows++;
-          }
-        });
-
-        if (parsedCompanies.length === 0) {
-          throw new Error(
-            "No valid companies found in the Excel file. " +
-            "Please ensure your file has columns for 'Company Name' and 'Customer Name'."
-          );
-        }
-
-        setPreviewCompanies(parsedCompanies);
-        
-        let description = `Found ${parsedCompanies.length} valid companies`;
-        if (duplicateCount > 0) {
-          description += `, ${duplicateCount} duplicates skipped`;
-        }
-        if (skippedRows > 0) {
-          description += `, ${skippedRows} invalid rows skipped`;
-        }
-        
-        toast({
-          title: "File Processed Successfully",
-          description: description,
-        });
-      } catch (error) {
-        console.error('Error parsing Excel file:', error);
-        toast({
-          variant: "destructive",
-          title: "Error Processing File",
-          description: error instanceof Error ? error.message : "Failed to parse the file. Please check the format.",
-        });
-        setPreviewCompanies([]);
-        setUploadedFileName("");
+        setPreviewCompanies(parsed);
       } finally {
         setBulkUploadLoading(false);
       }
     };
 
-    reader.onerror = () => {
-      setBulkUploadLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to read the file.",
-      });
-    };
-
-    reader.readAsArrayBuffer(file);
+    reader.readAsBinaryString(file);
   };
 
   const handleBulkUpload = async () => {
-    if (previewCompanies.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No companies to upload. Please upload a file first.",
-      });
-      return;
-    }
-
-    setBulkUploadLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/company_bulk_upload_create/`, {
+      const resp = await fetch(`${API_URL}/api/company_bulk_upload_create/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companies: previewCompanies }),
       });
 
-      const data = await response.json();
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.message);
 
-      if (!response.ok) {
-        throw new Error(data.msg || data.error || "Failed to upload companies");
-      }
-
-      toast({
-        title: "Bulk Upload Successful",
-        description: data.msg || `Successfully uploaded companies to the database.`,
-      });
-
-      // Reset bulk upload state
+      toast({ title: "Bulk upload successful" });
       setPreviewCompanies([]);
       setUploadedFileName("");
-      
-      // Refresh the companies list
+
       fetchCompanies();
-      
-      // Close the modal
-      setOpen(false);
-    } catch (error) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Upload Failed",
-        description:
-          error instanceof Error ? error.message : "Unexpected error occurred during bulk upload.",
-      });
-    } finally {
-      setBulkUploadLoading(false);
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Upload failed", description: err.message });
     }
   };
 
-  const clearBulkUpload = () => {
-    setPreviewCompanies([]);
-    setUploadedFileName("");
+  /* -------------------- EDIT / DELETE -------------------- */
+  const openEdit = (comp: Company) => {
+    setSelectedCompany(comp);
+    setEditForm(comp);
+    setEditModalOpen(true);
   };
 
-  // Function to remove duplicate companies from the main table
-  const removeDuplicates = (companies: Company[]): Company[] => {
-    const seen = new Set();
-    return companies.filter(company => {
-      const key = `${company.company_name.toLowerCase()}_${company.customer_name.toLowerCase()}`;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
+  const handleEditChange = (e: any) => {
+    setEditForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  // Get unique companies for display
-  const uniqueCompanies = removeDuplicates(companies);
+  const handleSaveEdit = async () => {
+    if (!selectedCompany) return;
 
-  /* ---------------------- Render ---------------------- */
+    setActionLoading(true);
+    try {
+      const resp = await fetch(`${API_URL}/api/update_company/${selectedCompany.id}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.message);
+
+      toast({ title: "Company updated" });
+      fetchCompanies();
+      setEditModalOpen(false);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async (comp: Company) => {
+    try {
+      const resp = await fetch(`${API_URL}/api/delete_company/${comp.id}/`, {
+        method: "DELETE",
+      });
+
+      const data = await resp.json();
+      if (!resp.ok || !data.status) throw new Error(data.message);
+
+      toast({ title: "Company deleted" });
+      fetchCompanies();
+    } catch (err: any) {
+      toast({ variant: "destructive", title: "Delete failed", description: err.message });
+    }
+  };
+
+  /* -------------------- UI -------------------- */
   return (
-    <div className="text-gray-700 space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Header + Search */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Manage Companies</h2>
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-gray-500">
-            Showing {uniqueCompanies.length} unique companies
-          </div>
-          <Button
-            onClick={() => setOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="w-4 h-4" /> Add Company
-          </Button>
+        <h2 className="text-xl font-semibold">Manage Companies</h2>
+
+        <div className="flex items-center gap-3">
+          <Input
+            placeholder="Search companies..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-60"
+          />
+
+          <Dialog open={openModal} onOpenChange={setOpenModal}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2 bg-blue-600 text-white">
+                <Plus className="w-4 h-4" /> Add / Bulk
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="max-w-2xl min-h-[480px]">
+              <DialogHeader>
+                <DialogTitle>Add Company</DialogTitle>
+              </DialogHeader>
+
+              {/* ---------------- CUSTOM BLUE TAB SWITCH INSIDE MODAL ---------------- */}
+              <div className="w-full mt-2 mb-4">
+                <div className="relative flex bg-blue-50 p-1 rounded-xl shadow-inner w-full">
+
+                  {/* Moving indicator */}
+                  <div
+                    className={`absolute top-1 bottom-1 rounded-lg bg-blue-600 transition-all duration-300 shadow-md
+            ${activeTab === "single" ? "left-1 right-[50%]" : "left-[50%] right-1"}`}
+                  ></div>
+
+                  {/* Single Entry Tab */}
+                  <button
+                    onClick={() => setActiveTab("single")}
+                    className={`flex-1 z-10 py-2 font-semibold rounded-lg transition-all duration-300
+            ${activeTab === "single" ? "text-white" : "text-blue-700 hover:text-blue-900"}`}
+                  >
+                    Single Entry
+                  </button>
+
+                  {/* Bulk Upload Tab */}
+                  <button
+                    onClick={() => setActiveTab("bulk")}
+                    className={`flex-1 z-10 py-2 font-semibold rounded-lg transition-all duration-300
+            ${activeTab === "bulk" ? "text-white" : "text-blue-700 hover:text-blue-900"}`}
+                  >
+                    Bulk Upload
+                  </button>
+                </div>
+              </div>
+
+              {/* ---------------- CONTENT AREA (same modal size for both tabs) ---------------- */}
+              <div className="min-h-[320px]">
+
+                {/* ---------------- SINGLE ENTRY FORM ---------------- */}
+                {activeTab === "single" && (
+                  <form onSubmit={handleAddCompany} className="space-y-4 animate-fadeIn">
+
+                    <div>
+                      <Label>Company Name *</Label>
+                      <Input
+                        name="company_name"
+                        value={formData.company_name}
+                        onChange={handleChange}
+                        pattern="^[A-Za-z0-9 _\\-]{2,40}$"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Customer Name *</Label>
+                      <Input
+                        name="customer_name"
+                        value={formData.customer_name}
+                        onChange={handleChange}
+                        pattern="^[A-Za-z0-9 _-]{2,40}$"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Contact No (10 digits)</Label>
+                      <Input
+                        name="contact_no"
+                        value={formData.contact_no}
+                        onChange={handleChange}
+                        pattern="^[0-9]{10}$"
+                        maxLength={10}
+                      />
+                    </div>
+
+                    <div>
+                      <Label>Customer DC No</Label>
+                      <Input
+                        name="customer_dc_no"
+                        value={formData.customer_dc_no}
+                        onChange={handleChange}
+                        pattern="^[A-Za-z0-9 _-]{1,30}$"
+                      />
+                    </div>
+
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white w-full">
+                      Save Company
+                    </Button>
+                  </form>
+                )}
+
+                {/* ---------------- BULK UPLOAD TAB ---------------- */}
+                {activeTab === "bulk" && (
+                  <div className="animate-fadeIn space-y-4">
+
+                    {/* File upload area */}
+                    <div className="border border-dashed p-5 text-center rounded-lg">
+                      {!uploadedFileName ? (
+                        <Label htmlFor="bulk" className="cursor-pointer">
+                          <Upload className="mx-auto h-10 w-10 text-blue-500" />
+                          <p className="mt-1 font-semibold text-blue-700">Upload Excel File</p>
+                          <Input
+                            id="bulk"
+                            type="file"
+                            accept=".xlsx,.xls,.csv"
+                            className="hidden"
+                            onChange={handleFileUpload}
+                          />
+                        </Label>
+                      ) : (
+                        <div className="space-y-2">
+                          <FileText className="mx-auto h-10 w-10 text-green-600" />
+                          <p className="font-medium">{uploadedFileName}</p>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setUploadedFileName("");
+                              setPreviewCompanies([]);
+                            }}
+                          >
+                            <X className="w-4 h-4" /> Change File
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Preview Table */}
+                    {previewCompanies.length > 0 && (
+                      <>
+                        <p className="font-semibold">Preview ({previewCompanies.length})</p>
+
+                        <div className="max-h-40 overflow-y-auto border rounded">
+                          <table className="w-full text-sm">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="p-2">#</th>
+                                <th className="p-2">Company</th>
+                                <th className="p-2">Customer</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {previewCompanies.map((c, i) => (
+                                <tr key={i} className="border-b">
+                                  <td className="p-2">{i + 1}</td>
+                                  <td className="p-2">{c.company_name}</td>
+                                  <td className="p-2">{c.customer_name}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white w-full"
+                          onClick={handleBulkUpload}
+                        >
+                          Upload All
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            </DialogContent>
+          </Dialog>
+
+
         </div>
       </div>
 
-      {/* Loading */}
+      {/* ---------------- TABLE ---------------- */}
       {loading ? (
-        <div className="flex justify-center items-center h-64 text-gray-600">
-          <Loader2 className="animate-spin mr-2" /> Loading companies...
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="animate-spin mr-2" /> Loading...
         </div>
-      ) : uniqueCompanies.length === 0 ? (
-        <p className="text-center text-gray-500 italic">No companies found.</p>
+      ) : filteredCompanies.length === 0 ? (
+        <p className="text-center py-10 text-gray-500 italic">
+          {query ? "No matched companies found." : "No companies found."}
+        </p>
       ) : (
-        <Card className="border shadow-sm overflow-x-auto">
-          <table className="w-full border-collapse text-sm sm:text-base">
-            <thead>
-              <tr className="bg-slate-100 border-b text-center">
-                <th className="px-4 py-2 border">S.No</th>
-                <th className="px-4 py-2 border">Company Name</th>
-                <th className="px-4 py-2 border">Customer Name</th>
-                <th className="px-4 py-2 border">Address</th>
-                <th className="px-4 py-2 border">Contact No</th>
-                <th className="px-4 py-2 border">Email</th>
-                <th className="px-4 py-2 border">Customer DC No</th>
-              </tr>
-            </thead>
-            <tbody>
-              {uniqueCompanies.map((comp, index) => (
-                <tr
-                  key={comp.id}
-                  className="border-b hover:bg-slate-50 text-center transition"
-                >
-                  <td className="border px-4 py-2">{index + 1}</td>
-                  <td className="border px-4 py-2 font-medium">
-                    {comp.company_name}
-                  </td>
-                  <td className="border px-4 py-2">{comp.customer_name}</td>
-                  <td className="border px-4 py-2">{comp.company_address}</td>
-                  <td className="border px-4 py-2">{comp.contact_no}</td>
-                  <td className="border px-4 py-2">{comp.company_email}</td>
-                  <td className="border px-4 py-2">{comp.customer_dc_no}</td>
+        <>
+          <Card className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-center">
+                  <th className="p-2 border">S.No</th>
+                  <th className="p-2 border">Company</th>
+                  <th className="p-2 border">Customer</th>
+                  <th className="p-2 border">Contact</th>
+                  <th className="p-2 border">Customer DC</th>
+                  <th className="p-2 border w-[10%]">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+              </thead>
+
+              <tbody>
+                {currentRows.map((c, i) => (
+                  <tr key={c.id} className="text-center border-b">
+                    <td className="p-2 border">{(currentPage - 1) * rowsPerPage + i + 1}</td>
+                    <td className="p-2 border">{c.company_name}</td>
+                    <td className="p-2 border">{c.customer_name}</td>
+                    <td className="p-2 border">{c.contact_no || "-"}</td>
+                    <td className="p-2 border">{c.customer_dc_no || "-"}</td>
+
+                    <td className="p-2 border">
+                      <div className="flex justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEdit(c)}
+                          className="flex items-center gap-1 hover:bg-transparent hover:text-black hover:scale-110"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+    setCompanyToDelete(c);
+    setConfirmDeleteOpen(true);
+  }}
+                          className="flex items-center gap-1 hover:scale-110"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+
+          {/* Pagination Buttons */}
+          {totalPages > 1 && (
+            <div className="flex justify-end items-center gap-3 mt-6 text-sm">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+                className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+              >
+                Prev
+              </button>
+
+              <span className="font-medium text-slate-700">
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+                className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+              >
+                Next
+              </button>
+
+            </div>
+          )}
+        </>
       )}
 
-      {/* ---------------------- Add Company Modal (Two Columns) ---------------------- */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+
+      {/* EDIT MODAL */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="max-w-md rounded-xl border shadow-lg animate-fadeIn">
           <DialogHeader>
-            <DialogTitle>Add New Company</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-blue-700">
+              Edit Company
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-3">
-            {/* Left Column - Single Company Form */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Add Single Company</h3>
-              
-              <form onSubmit={handleAddCompany} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label>Company Name *</Label>
-                    <Input
-                      name="company_name"
-                      value={formData.company_name}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>Customer Name *</Label>
-                    <Input
-                      name="customer_name"
-                      value={formData.customer_name}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label>Company Address</Label>
-                    <Input
-                      name="company_address"
-                      value={formData.company_address}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <Label>Contact No</Label>
-                    <Input
-                      name="contact_no"
-                      value={formData.contact_no}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      type="email"
-                      name="company_email"
-                      value={formData.company_email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div>
-                    <Label>Customer DC No</Label>
-                    <Input
-                      name="customer_dc_no"
-                      value={formData.customer_dc_no}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
+          {selectedCompany && (
+            <div className="space-y-4 mt-4">
 
-                <div className="flex gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    Save Company
-                  </Button>
-                </div>
-              </form>
-            </div>
-
-            {/* Right Column - Bulk Upload */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold border-b pb-2">Bulk Upload Companies</h3>
-              
-              {/* File Upload Section */}
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
-                {!uploadedFileName ? (
-                  <div className="space-y-3">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto" />
-                    <div>
-                      <Label htmlFor="bulk-upload" className="cursor-pointer">
-                        <span className="text-blue-600 hover:text-blue-700 font-medium">
-                          Click to upload
-                        </span>{" "}
-                        or drag and drop
-                      </Label>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Excel files only (.xlsx, .xls, .csv)
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Required columns: Company Name, Customer Name
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Duplicate companies will be automatically filtered out
-                      </p>
-                    </div>
-                    <Input
-                      id="bulk-upload"
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <FileText className="w-12 h-12 text-green-500 mx-auto" />
-                    <p className="font-medium truncate">{uploadedFileName}</p>
-                    <p className="text-sm text-green-600">
-                      {previewCompanies.length} unique companies found
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={clearBulkUpload}
-                      className="flex items-center gap-2 mx-auto"
-                    >
-                      <X className="w-4 h-4" /> Change File
-                    </Button>
-                  </div>
-                )}
+              {/* Company Name */}
+              <div>
+                <Label className="font-semibold text-gray-700">Company Name *</Label>
+                <Input
+                  name="company_name"
+                  value={editForm.company_name || ""}
+                  onChange={handleEditChange}
+                  pattern="^[A-Za-z0-9 _\\-]{2,40}$"
+                  title="Only letters, numbers, spaces, hyphens allowed. 2–40 characters."
+                  className="mt-1"
+                />
               </div>
 
-              {/* Loading State */}
-              {bulkUploadLoading && previewCompanies.length === 0 && (
-                <div className="text-center py-4">
-                  <Loader2 className="animate-spin mx-auto mb-2 w-6 h-6" />
-                  <p className="text-sm text-gray-600">Processing Excel file...</p>
-                </div>
-              )}
+              {/* Customer Name */}
+              <div>
+                <Label className="font-semibold text-gray-700">Customer Name *</Label>
+                <Input
+                  name="customer_name"
+                  value={editForm.customer_name || ""}
+                  onChange={handleEditChange}
+                  pattern="^[A-Za-z0-9 _\\-]{2,40}$"
+                  title="Only letters, numbers, spaces, hyphens allowed. 2–40 characters."
+                  className="mt-1"
+                />
+              </div>
 
-              {/* Preview Section */}
-              {previewCompanies.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-semibold">Preview ({previewCompanies.length} unique companies)</h4>
-                    <Button
-                      onClick={handleBulkUpload}
-                      disabled={bulkUploadLoading}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {bulkUploadLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload All
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <div className="max-h-60 overflow-y-auto border rounded-lg">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 sticky top-0">
-                        <tr>
-                          <th className="px-3 py-2 text-left border-b font-semibold">#</th>
-                          <th className="px-3 py-2 text-left border-b font-semibold">Company Name</th>
-                          <th className="px-3 py-2 text-left border-b font-semibold">Customer Name</th>
-                          <th className="px-3 py-2 text-left border-b font-semibold">Email</th>
-                          <th className="px-3 py-2 text-left border-b font-semibold">Contact</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {previewCompanies.map((company, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="px-3 py-2 text-xs text-gray-500">{index + 1}</td>
-                            <td className="px-3 py-2">{company.company_name}</td>
-                            <td className="px-3 py-2">{company.customer_name}</td>
-                            <td className="px-3 py-2 text-sm">{company.company_email || '-'}</td>
-                            <td className="px-3 py-2 text-sm">{company.contact_no || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  <div className="text-xs text-gray-500">
-                    <p>Only unique companies will be uploaded. Duplicates are automatically filtered out.</p>
-                    <p>Required fields: Company Name, Customer Name</p>
-                  </div>
-                </div>
-              )}
+              {/* Contact No */}
+              <div>
+                <Label className="font-semibold text-gray-700">Contact No (10 digits)</Label>
+                <Input
+                  name="contact_no"
+                  value={editForm.contact_no || ""}
+                  onChange={handleEditChange}
+                  pattern="^[0-9]{10}$"
+                  maxLength={10}
+                  title="Enter a valid 10-digit number"
+                  className="mt-1"
+                />
+              </div>
+
+              {/* Customer DC No */}
+              <div>
+                <Label className="font-semibold text-gray-700">Customer DC No</Label>
+                <Input
+                  name="customer_dc_no"
+                  value={editForm.customer_dc_no || ""}
+                  onChange={handleEditChange}
+                  pattern="^[A-Za-z0-9 _\\-]{1,30}$"
+
+                  title="Only letters, numbers, spaces, hyphens allowed."
+                  className="mt-1"
+                />
+              </div>
+
             </div>
-          </div>
+          )}
+
+          <DialogFooter className="mt-6 flex justify-between">
+
+            <Button
+              variant="outline"
+              onClick={() => setEditModalOpen(false)}
+              className="px-6"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+              onClick={handleSaveEdit}
+              disabled={actionLoading}
+            >
+              {actionLoading ? (
+                <Loader2 className="animate-spin w-4 h-4" />
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete MODAL */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+  <DialogContent className="max-w-sm rounded-lg">
+    <DialogHeader>
+      <DialogTitle className="text-red-600 font-semibold">
+        Confirm Delete
+      </DialogTitle>
+    </DialogHeader>
+
+    <p className="text-gray-700 mt-2">
+      Are you sure you want to delete{" "}
+      <span className="font-semibold">{companyToDelete?.company_name}</span>?
+      <br />
+      This action cannot be undone.
+    </p>
+
+    <DialogFooter className="mt-4 flex justify-end gap-3">
+
+      <Button
+        variant="outline"
+        onClick={() => setConfirmDeleteOpen(false)}
+      >
+        Cancel
+      </Button>
+
+      <Button
+        variant="destructive"
+        onClick={async () => {
+          if (!companyToDelete) return;
+          await handleDelete(companyToDelete);
+          setConfirmDeleteOpen(false);
+        }}
+      >
+        Delete
+      </Button>
+
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+
     </div>
   );
 };

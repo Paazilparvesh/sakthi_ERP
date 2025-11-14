@@ -61,30 +61,30 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
 
     // ✅ Handle Input Changes + Realtime Validation
     const handleChange = (
-  e: React.ChangeEvent<
-    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-  >
-) => {
-  const { name, value } = e.target;
-  const updated = { ...formData, [name]: value };
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
+    ) => {
+        const { name, value } = e.target;
+        const updated = { ...formData, [name]: value };
 
-  // ✅ Auto-update remarks based on status selection
-  if (name === "status") {
-    if (value === "open") {
-      updated.remarks = `This Material is Processed on ${programDate || "N/A"}`;
-    } else if (value === "closed") {
-      updated.remarks = "Bill Closed";
-    }
-  }
+        // ✅ Auto-update remarks based on status selection
+        if (name === "status") {
+            if (value === "open") {
+                updated.remarks = `This Material is Processed on ${programDate || "N/A"}`;
+            } else if (value === "closed") {
+                updated.remarks = "Bill Closed";
+            }
+        }
 
-  // ✅ If user switches material and status is "open", refresh program date in remarks
-  if (name === "material_details" && formData.status === "open") {
-    updated.remarks = `This Material is Processed on ${programDate || "N/A"}`;
-  }
+        // ✅ If user switches material and status is "open", refresh program date in remarks
+        if (name === "material_details" && formData.status === "open") {
+            updated.remarks = `This Material is Processed on ${programDate || "N/A"}`;
+        }
 
-  setFormData(updated);
-  validateField(name, value);
-};
+        setFormData(updated);
+        validateField(name, value);
+    };
 
 
     // ✅ Field-Level Validation
@@ -174,10 +174,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
     };
 
     return (
-        <div className="max-w-3xl mx-auto mt-10 bg-white rounded-2xl p-6 sm:p-10 border shadow-md">
-            <h2 className="text-3xl font-bold text-left text-gray-800 mb-10">
-                Accounts Form — {companyName}
-            </h2>
+        <div className=" mx-auto mt-10 bg-white rounded-2xl p-6 sm:p-10 border shadow-md">
 
             <form onSubmit={handleOpenConfirm} className="space-y-8">
                 {/* ✅ Material Dropdown */}
@@ -188,13 +185,13 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
                         value={formData.material_details}
                         onChange={handleChange}
                         className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.material_details
-                                ? "border-red-500 focus:ring-red-400"
-                                : "border-gray-300 focus:ring-green-500"
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-green-500"
                             }`}
                     >
                         <option value="">Select Material</option>
                         {materials
-                              .filter((mat) => mat.acc_status === "pending")
+                            .filter((mat) => mat.acc_status === "pending")
                             .map((mat) => (
                                 <option key={mat.id} value={mat.id}>
                                     {mat.mat_type} ({mat.mat_grade}) — {mat.thick}mm ×{" "}
@@ -260,8 +257,8 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
                             rows={4}
                             placeholder="Add any remarks..."
                             className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.remarks
-                                    ? "border-red-500 focus:ring-red-400"
-                                    : "border-gray-300 focus:ring-blue-500"
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-500"
                                 }`}
                         />
                         {formErrors.remarks && (
