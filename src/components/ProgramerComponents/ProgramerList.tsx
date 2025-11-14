@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import { ProgramerTableProps } from "@/types/qa.type";
 
 const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
@@ -8,7 +8,7 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
             {/* Desktop Table */}
             <table className="w-full border-collapse text-sm sm:text-base">
                 <thead>
-                    <tr className="border-b bg-gray-300 text-center">
+                    <tr className="border-b bg-slate-100 text-center">
                         <th className="px-2 py-2 border w-[7%]">S. No.</th>
                         <th className="px-2 py-2 border w-[12%]">Date</th>
                         <th className="px-2 py-2 border w-[18%]">Company Name</th>
@@ -22,21 +22,21 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
                 </thead>
 
                 <tbody>
-                    {data.slice().reverse().map((item, index) => (
+                    {data.map((item, index) => (
                         <tr
                             key={index}
-                            className="bg-white border-b border-slate-200 hover:bg-gray-50 transition-colors border"
+                            className="hover:bg-slate-50 even:bg-gray-50 odd:bg-white transition-all border text-center text-sm"
                         >
-                            <td className="px-4 py-3 border font-medium text-slate-800 text-center">{item.serial_number}</td>
-                            <td className="px-4 py-3 border text-slate-600 text-center">{item.date}</td>
-                            <td className="px-4 py-3 border">{item.company_name}</td>
-                            <td className="px-4 py-3 border">{item.customer_name}</td>
-                            <td className={`px-4 py-3 border text-center`}>
-                                <span className={`px-4 py-1 border text-center rounded-3xl  ${item.color === "yellow" ? " bg-yellow-100" : "bg-white"} `}>
+                            <td className="px-4 py-3 border font-medium">{item.serial_number}</td>
+                            <td className="px-4 py-3 border">{item.date}</td>
+                            <td className="px-4 py-3 border text-left">{item.company_name}</td>
+                            <td className="px-4 py-3 border text-left">{item.customer_name}</td>
+                            <td className={`px-4 py-3 border`}>
+                                <span className={`px-4 py-1 border text-sm text-center rounded-full shadow-sm  ${item.color === "yellow" ? " bg-yellow-100" : "bg-white"} `}>
                                     {item.color}</span></td>
-                            <td className="px-4 py-3 border text-center">{item.contact_no}</td>
-                            <td className="px-4 py-3 border text-center">{item.created_by}</td>
-                            <td className="px-4 py-3 border text-center">
+                            <td className="px-4 py-3 border">{item.contact_no}</td>
+                            <td className="px-4 py-3 border">{item.created_by}</td>
+                            <td className="px-4 py-3 border">
                                 <span
                                     className={`px-3 py-1 rounded-full text-xs font-semibold ${item.programer_status?.toLowerCase() === "completed"
                                         ? "bg-green-100 text-green-700"
@@ -46,9 +46,9 @@ const ProgramerList: React.FC<ProgramerTableProps> = ({ data, onView }) => {
                                     {item.programer_status}
                                 </span>
                             </td>
-                            <td className="px-4 py-3 border text-center">
+                            <td className="px-4 py-3 border">
                                 <button
-                                    className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 flex items-center gap-1 mx-auto"
+                                    className="bg-blue-800 text-white px-3 py-1 rounded-lg hover:bg-blue-700 flex items-center gap-1 mx-auto"
                                     onClick={() => onView(item)}
                                 >
                                     <Eye className="h-4 w-4" /> View

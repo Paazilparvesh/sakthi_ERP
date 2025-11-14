@@ -48,6 +48,9 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
   const materials: Material[] = item.materials || [];
   const userName = localStorage.getItem("username")
 
+  const allowOnlyNumbers = (value: string) => /^(\d+(\.\d*)?|\.\d+)?$/.test(value);
+
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -74,12 +77,12 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     created_by: ""
   });
 
-  // ✅ keep product ID synced if `item` changes
+  // keep product ID synced if `item` changes
   useEffect(() => {
     setFormData((prev) => ({ ...prev, product_details: item.id }));
   }, [item]);
 
-  // ✅ Auto-fill today's date
+  // Auto-fill today's date
   useEffect(() => {
     if (!formData.program_date) {
       const today = new Date();
@@ -88,7 +91,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     }
   }, [formData.program_date]);
 
-  // ✅ Auto-generate Program Number once on mount
+  // Auto-generate Program Number once on mount
   useEffect(() => {
     if (!formData.program_no && userName) {
       const now = new Date();
@@ -138,9 +141,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       total_no_of_sheets: totalSheet.toString(),
     };
   };
-
-
-
 
   const handleValidateAll = () => {
     const fieldsToCheck = Object.keys(formData).filter(
@@ -261,26 +261,41 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
   ) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => {
-      let updated = { ...prev, [name]: value };
+    // 🔹 Numeric fields (auto-block invalid input)
+    const numericFields = [
+      "processed_quantity",
+      "used_weight",
+      "number_of_sheets",
+      "cut_length_per_sheet",
+      "pierce_per_sheet",
+      "processed_mins_per_sheet",
+    ];
 
-      // ✅ When material changes — find and store its quantity
+    if (numericFields.includes(name)) {
+      if (!allowOnlyNumbers(value)) return; // ❌ block invalid
+    }
+
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      // 🔹 When material changes → reset quantities
       if (name === "material_details") {
-        const selectedMat = materials.find(
-          (mat) => mat.id === Number(value)
-        );
+        const selectedMat = materials.find((m) => m.id === Number(value));
         const qty = Number(selectedMat?.quantity) || 0;
         setSelectedMaterialQty(qty);
 
-        // Reset processed & balance when material changes
-        updated = { ...updated, processed_quantity: "", balance_quantity: "" };
+        updated.processed_quantity = "";
+        updated.balance_quantity = qty.toString();
       }
 
-      // ✅ When processed quantity changes — auto-calc balance
+      // 🔹 Auto-update balance
       if (name === "processed_quantity") {
         const processed = Number(value) || 0;
-        const balance = selectedMaterialQty - processed;
-        updated = { ...updated, balance_quantity: balance.toString() };
+        let balance = selectedMaterialQty - processed;
+
+        if (balance < 0) balance = 0; // prevent negative
+
+        updated.balance_quantity = balance.toString();
       }
 
       return updated;
@@ -385,7 +400,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} className="hover:by-gray-400">
               Cancel
             </Button>
             <Button
@@ -398,12 +413,13 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <div className="w-full max-w-6xl mx-auto bg-white rounded-2xl pt-2">
+
+      <div className="w-full mx-auto bg-white rounded-3xl p-4">
         {/* Progress Steps */}
         <StepProgressBar
-          steps={["Programer Details", "Planning Data"]}
+          steps={["Programer Details", "Program Data"]}
           currentStep={currentStep}
-          activeColor="bg-blue-900"
+          activeColor="bg-blue-700"
           inactiveColor="bg-gray-300"
         />
 
@@ -412,37 +428,36 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
           {currentStep === 1 && (
             <div className="space-y-6">
-              {/* ✅ Row 1: Material Dropdown (full width) */}
-              <div className="flex flex-col space-y-1.5">
-                <label className="text-sm font-medium text-gray-700">Material</label>
-                <select
-                  name="material_details"
-                  value={formData.material_details}
-                  onChange={handleChange}
-                  className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.material_details
-                    ? "border-red-500 focus:ring-red-400"
-                    : "border-gray-300 focus:ring-blue-500"
-                    }`}
-                >
-                  <option value="">Select Material</option>
-                  {materials
-                    .filter((mat) => mat.programer_status === "pending")
-                    .map((mat) => (
-                      <option key={mat.id} value={mat.id}>
-                        {mat.mat_type} ({mat.mat_grade}) - {mat.thick}mm × {mat.width} ×{" "}
-                        {mat.length}
-                      </option>
-                    ))}
-                </select>
-                {formErrors.material_details && (
-                  <span className="text-red-500 text-xs">
-                    {formErrors.material_details}
-                  </span>
-                )}
-              </div>
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Material Dropdown */}
+                <div className="flex flex-col space-y-1.5">
+                  <label className="text-sm font-medium text-gray-700">Material</label>
+                  <select
+                    name="material_details"
+                    value={formData.material_details}
+                    onChange={handleChange}
+                    className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors.material_details
+                      ? "border-red-500 focus:ring-red-400"
+                      : "border-gray-300 focus:ring-blue-500"
+                      }`}
+                  >
+                    <option value="">Select Material</option>
+                    {materials
+                      .filter((mat) => mat.programer_status === "pending")
+                      .map((mat) => (
+                        <option key={mat.id} value={mat.id}>
+                          {mat.mat_type} ({mat.mat_grade}) - {mat.thick}mm × {mat.width} ×{" "}
+                          {mat.length}
+                        </option>
+                      ))}
+                  </select>
+                  {formErrors.material_details && (
+                    <span className="text-red-500 text-xs">
+                      {formErrors.material_details}
+                    </span>
+                  )}
+                </div>
 
-              {/* ✅ Row 2: Program No & Program Date (side by side) */}
-              <div className="grid md:grid-cols-2 gap-6">
                 {["program_no", "program_date"].map((key) => (
                   <div key={key} className="flex flex-col space-y-1.5">
                     <label
@@ -476,10 +491,10 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
           {/* --- Step 2 --- */}
           {currentStep === 2 && (
-            <div className="space-y-8">
+            <div className="space-y-8 px-12">
               {/* 🔹 User Input Fields */}
               <section>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">
                   User Input Fields
                 </h3>
                 <div className="grid md:grid-cols-3 gap-6">
@@ -578,14 +593,14 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
           <Button
             variant="outline"
             onClick={handleBack}
-            className="border-gray-400 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-100 w-full sm:w-auto"
+            className="border-gray-400 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-100 hover:text-gray-700 w-full sm:w-auto"
           >
             Back
           </Button>
 
           {currentStep < totalSteps ? (
             <Button
-              className="bg-blue-900 text-white px-6 py-3 rounded-xl hover:bg-blue-800 w-full sm:w-auto"
+              className="bg-blue-700 text-white px-6 py-3 rounded-xl hover:bg-blue-600 w-full sm:w-auto"
               onClick={handleNext}
             >
               Next

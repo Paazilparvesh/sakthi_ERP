@@ -54,11 +54,7 @@ interface AccDetail {
 interface OutwardDetailProps {
     product: ProductType;
     program?: ProgramerDetail[];
-    onBack: () => void;
     getStatusColor: (status: string) => string;
-    onProceedQA: () => void;
-    // materials?: Material[]; 
-    onProceedAccount: () => void;
 }
 
 /* ---------------------- Helper Components ---------------------- */
@@ -119,19 +115,12 @@ const InfoCard = ({
     );
 };
 
-
 /* ---------------------- Main Component ---------------------- */
 const OutwardDetail: React.FC<OutwardDetailProps> = ({
     product,
-    onBack,
-    onProceedQA,
-    onProceedAccount,
 }) => {
     const BASE_URL = import.meta.env.VITE_API_URL;
     const { toast } = useToast();
-
-    const role = localStorage.getItem("Role_Type");
-
     // 🔹 States
     const [qa, setQa] = useState<QaDetail[]>([]);
     const [acc, setAcc] = useState<AccDetail[]>([]);
@@ -245,44 +234,10 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
 
     /* ---------------------- JSX ---------------------- */
     return (
-        <Card className="shadow-lg p-6 mx-auto w-full max-w-7xl">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">
-                    Outward Product Details
-                </h2>
-                <div className="flex flex-wrap justify-center gap-4">
-                    {product.outward_status?.toLowerCase() === "pending" && (
-                        <>
-                            {product.qa_status?.toLowerCase() === "pending" && (
-                                <Button
-                                    onClick={onProceedQA}
-                                    className="bg-blue-700 hover:bg-blue-800 text-white"
-                                >
-                                    Proceed to QA
-                                </Button>
-                            )}
-                            {role === "accountent" && (
-                                <Button
-                                    onClick={onProceedAccount}
-                                    className="bg-green-700 hover:bg-green-800 text-white"
-                                >
-                                    Proceed to Accounts
-                                </Button>
-                            )}
-                        </>
-                    )}
-                    <Button
-                        className="bg-gray-600 text-white hover:bg-gray-700"
-                        onClick={onBack}
-                    >
-                        Back to Table
-                    </Button>
-                </div>
-            </div>
+        <Card className="shadow-lg rounded-3xl mx-auto w-full overflow-hidden p-10">
 
             {/* Product Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-4">
                     {renderFieldCard("Serial Number", product.serial_number)}
                     {renderFieldCard("Company Name", product.company_name)}
@@ -301,17 +256,17 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                 </div>
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-5" />
 
             {/* Materials Table */}
             {product.materials?.length > 0 && (
-                <section className="mt-10 space-y-4">
-                    <h3 className="text-xl font-semibold text-gray-700">
+                <section className="space-y-4 my-10">
+                    <h3 className="text-3xl font-semibold text-gray-700">
                         Product Materials
                     </h3>
                     <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-sm">
                         <table className="w-full border-collapse text-center text-sm sm:text-base">
-                            <thead className="bg-gray-100 text-gray-700 font-semibold">
+                            <thead className="bg-gray-100 text-gray-700 font-semibold w-full">
                                 <tr>
                                     <th className="border px-2 py-2">S.No</th>
                                     <th className="border px-2 py-2">Material Type</th>
@@ -325,7 +280,10 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                                     <th className="border px-2 py-2">Total Weight (kg)</th>
                                     <th className="border px-2 py-2">Stock Due (Days)</th>
                                     <th className="border px-2 py-2">Remarks</th>
-                                    <th className="border px-2 py-2">Action</th>
+                                    {product.materials.some(mat => mat.programer_status === "completed") && (
+                                        <th className="border px-2 py-2">Action</th>
+                                    )}
+
                                 </tr>
                             </thead>
                             <tbody>
@@ -346,11 +304,12 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                                         <td className="border px-2 py-2">{mat.total_weight}</td>
                                         <td className="border px-2 py-2">{mat.stock_due}</td>
                                         <td className="border px-2 py-2">{mat.remarks}</td>
-                                        <td className="border px-2 py-2">
-                                            {mat.programer_status === "completed" && (
+                                        {mat.programer_status === "completed" && mat.id && (
+                                            <td className="border px-2 py-2">
                                                 <Button
                                                     onClick={() => handleViewProgram(mat.id!)}
                                                     disabled={loadingID === mat.id}
+                                                    className="bg-blue-700 hover:bg-blue-800"
                                                 >
                                                     {loadingID === mat.id
                                                         ? "Loading..."
@@ -358,8 +317,8 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                                                             ? "Hide"
                                                             : "View"}
                                                 </Button>
-                                            )}
-                                        </td>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -368,9 +327,10 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                 </section>
             )}
 
+            <Separator className="my-5" />
+
             {/* Programmer Details */}
             <section className="mt-10">
-                <Separator className="my-5" />
                 <h3 className="text-2xl font-semibold text-gray-800 mb-6">
                     Programmer Details
                 </h3>

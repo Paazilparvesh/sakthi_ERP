@@ -3,13 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchJSON } from "@/utils/api"; // ✅ import the reusable API utility
 
+import { Button } from "@/components/ui/button";
+
 // Types
 import { ProductType } from "@/types/inward.type";
 
 // Components
 import ProgramList from "@/components/ProgramerComponents/ProgramerList";
 import ProgramDetail from "@/components/ProgramerComponents/ProgramerDetail";
-import ProgramerFormWrapper from "@/components/ProgramerComponents/ProgramerForm";
+import ProgramerForm from "@/components/ProgramerComponents/ProgramerForm";
 
 
 const ProgramerDashboard: React.FC = () => {
@@ -61,7 +63,7 @@ const ProgramerDashboard: React.FC = () => {
 
 
   const filteredData = React.useMemo(() => {
-    return FormData.reverse().filter((item) => {
+    return [...FormData].filter((item) => {
       const matchesSearch =
         item.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,6 +109,20 @@ const ProgramerDashboard: React.FC = () => {
     });
   };
 
+  const headerTitle = React.useMemo(() => {
+    switch (view) {
+      case "list":
+        return "Programer Sheet";
+      case "detail":
+        return "Program Details";
+      case "form":
+        return "Program Update Form";
+      default:
+        return "Programer Sheet";
+    }
+  }, [view]);
+
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -131,30 +147,56 @@ const ProgramerDashboard: React.FC = () => {
         <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800">
-            Programer Sheet
+            {headerTitle}
           </h1>
 
           <div className="flex flex-col sm:flex-row items-center gap-4">
 
-            {/* Search Input */}
-            <input
-              type="text"
-              placeholder="Search by company, customer or serial..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="border px-4 py-3 rounded-full w-full sm:w-72 text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            />
+            {view === "list" && (
+              <>
+                {/* Search Input */}
+                <input
+                  type="text"
+                  placeholder="Search by company, customer or serial..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="border px-4 py-3 rounded-full w-full sm:w-72 text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                />
 
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border px-4 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="all">All</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-            </select>
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="border px-4 py-2 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-600"
+                >
+                  <option value="all">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </>
+            )}
+
+            {view === "detail" && (
+              <div className="flex gap-4">
+                <button
+                  onClick={handleBack}
+                  className="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
+                >
+                  Back
+                </button>
+
+                {selectedItem.programer_status?.toLowerCase() === "pending" && handleProceedToForm && (
+                  <Button
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    onClick={handleProceedToForm}
+                  >
+                    Proceed
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {view === "form" && null}
 
           </div>
         </div>
@@ -169,12 +211,12 @@ const ProgramerDashboard: React.FC = () => {
 
                 {/* Pagination Buttons */}
                 {totalPages > 1 && (
-                  <div className="flex justify-end items-center gap-3 mt-6">
+                  <div className="flex justify-end items-center gap-3 mt-6 text-sm">
 
                     <button
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage(prev => prev - 1)}
-                      className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                      className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
                     >
                       Prev
                     </button>
@@ -186,7 +228,7 @@ const ProgramerDashboard: React.FC = () => {
                     <button
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage(prev => prev + 1)}
-                      className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                      className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
                     >
                       Next
                     </button>
@@ -201,14 +243,12 @@ const ProgramerDashboard: React.FC = () => {
             {view === "detail" && selectedItem && (
               <ProgramDetail
                 item={selectedItem}
-                onBack={handleBack}
-                onProceed={handleProceedToForm}
               />
             )}
 
             {/* ---------------------- FORM VIEW ---------------------- */}
             {view === "form" && selectedItem && (
-              <ProgramerFormWrapper
+              <ProgramerForm
                 item={selectedItem}
                 onBack={handleBack}
                 onSuccess={handleFormSuccess}

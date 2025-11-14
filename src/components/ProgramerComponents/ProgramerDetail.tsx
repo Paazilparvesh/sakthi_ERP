@@ -18,7 +18,7 @@ const renderFieldCard = (
         : "w-28 rounded-full px-3 text-green-600 bg-green-100 border-green-300"
       : "text-gray-800";
 
-      const displayValue = value !== null && value !== undefined ? value : "-";
+  const displayValue = value !== null && value !== undefined ? value : "-";
 
   return (
     <Card
@@ -37,17 +37,9 @@ const renderFieldCard = (
   );
 };
 
-const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
-  item,
-  onBack,
-  onProceed,
-}) => {
-  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(
-    null
-  );
-  const [materialDataMap, setMaterialDataMap] = useState<
-    Record<number, QAData>
-  >({});
+const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
+  const [selectedMaterialId, setSelectedMaterialId] = useState<number | null>(null);
+  const [materialDataMap, setMaterialDataMap] = useState<Record<number, QAData>>({});
   const [loadingID, setLoadingID] = useState<number | null>(null);
   const { toast } = useToast();
 
@@ -79,6 +71,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
 
       if (Array.isArray(data) && data.length > 0) {
         const matched = data[0]; // Backend already filtered, so take first result
+        // console.log("materoial : ", matched)
         setMaterialDataMap((prev) => ({ ...prev, [materialId]: matched }));
         setSelectedMaterialId(materialId);
       } else {
@@ -103,28 +96,6 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
 
   return (
     <Card className="p-4 sm:p-6 md:p-8 mx-auto w-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">
-          Product Details
-        </h2>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {item.programer_status?.toLowerCase() === "pending" && onProceed && (
-            <Button
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              onClick={onProceed}
-            >
-              Proceed
-            </Button>
-          )}
-          <Button
-            className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
-            onClick={onBack}
-          >
-            Back to Table
-          </Button>
-        </div>
-      </div>
 
       {/* --- Product Information Section --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
@@ -158,18 +129,18 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
             <table className="w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden">
               <thead className="bg-gray-100 text-gray-700 font-semibold">
                 <tr>
-                  <th className="border px-2 py-2">S.No</th>
-                  <th className="border px-2 py-2">Material Type</th>
-                  <th className="border px-2 py-2">Material Grade</th>
-                  <th className="border px-2 py-2">Thick (mm)</th>
-                  <th className="border px-2 py-2">Width (mm)</th>
-                  <th className="border px-2 py-2">Length (mm)</th>
-                  <th className="border px-2 py-2">Density</th>
-                  <th className="border px-2 py-2">Unit Weight (kg)</th>
-                  <th className="border px-2 py-2">Quantity</th>
-                  <th className="border px-2 py-2">Total Weight (kg)</th>
-                  <th className="border px-2 py-2">Stock Due (Days)</th>
-                  <th className="border px-2 py-2">Remarks</th>
+                  <th className="border px-1 py-1">S.No</th>
+                  <th className="border px-1 py-1">Material Type</th>
+                  <th className="border px-1 py-1">Material Grade</th>
+                  <th className="border px-1 py-1">Thick (mm)</th>
+                  <th className="border px-1 py-1">Width (mm)</th>
+                  <th className="border px-1 py-1">Length (mm)</th>
+                  <th className="border px-1 py-1">Density</th>
+                  <th className="border px-1 py-1">Unit Weight (kg)</th>
+                  <th className="border px-1 py-1">Quantity</th>
+                  <th className="border px-1 py-1">Total Weight (kg)</th>
+                  <th className="border px-1 py-1">Stock Due (Days)</th>
+                  <th className="border px-1 py-1">Remarks</th>
                   {materials[0].programer_status === "completed" && (
                     <th className="border px-2 py-2">Action</th>
                   )}
@@ -202,6 +173,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
                           <Button
                             onClick={() => handleViewProgram(mat.id!)}
                             disabled={loadingID === mat.id}
+                            className="bg-blue-700 hover:bg-blue-600"
                           >
                             {loadingID === mat.id
                               ? "Loading..."
@@ -221,7 +193,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
       )}
 
       {/* --- Separate Section for Programmer Details --- */}
-      {materials[0].programer_status === "completed" && (
+      {/* {materials[0].programer_status === "completed" && (
         <section className="mt-10">
           <Separator className="my-5" />
           <h3 className="text-2xl font-semibold text-gray-800 mb-6">
@@ -257,7 +229,67 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({
             </p>
           )}
         </section>
+      )} */}
+
+      {/* --- Programmer Details Section (Table Format — Matches Material Table) --- */}
+      {materials[0].programer_status === "completed" && (
+        <section className="mt-10">
+          <Separator className="my-5" />
+
+          <h3 className="text-2xl font-semibold text-gray-800 mb-6">
+            Programmer Details
+          </h3>
+
+          {selectedMaterialId && materialDataMap[selectedMaterialId] ? (
+            <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-sm">
+              <table className="w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden">
+
+                {/* Header */}
+                <thead className="bg-gray-100 text-gray-700 font-semibold">
+                  <tr>
+                    <th className="border px-3 py-2 w-[50%]">Field</th>
+                    <th className="border px-3 py-2">Value</th>
+                  </tr>
+                </thead>
+
+                {/* Body */}
+                <tbody>
+                  {Object.entries(materialDataMap[selectedMaterialId]).map(
+                    ([key, value]) => {
+                      if (
+                        ["id", "product_details", "material_details"].includes(key)
+                      )
+                        return null;
+
+                      const label = key
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase());
+
+                      return (
+                        <tr key={key} className="hover:bg-gray-50 transition-colors text-gray-800">
+                          <td className="border px-3 py-2 font-medium">
+                            {label}
+                          </td>
+                          <td className="border px-3 py-2">
+                            {value !== "" && value !== null ? value.toString() : "—"}
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 italic text-center py-8">
+              {loadingID
+                ? "Fetching programmer details..."
+                : "Select a material row to view its programmer details."}
+            </p>
+          )}
+        </section>
       )}
+
     </Card>
   );
 };
