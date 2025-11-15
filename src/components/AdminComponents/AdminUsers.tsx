@@ -1,30 +1,34 @@
-import React, { useEffect, useState } from "react";
-import { UserPlus, Loader2 } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Loader2, UserPlus, Pencil, Trash2, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useForm } from "react-hook-form";
 
-interface SignupForm {
+type RoleType = "inward" | "programer" | "qa" | "admin" | "accountent";
+
+interface UserItem {
+  id: number;
   username: string;
   email: string;
-  password: string;
-  role_type: string;
+  role_type: RoleType;
+}
+
+interface UserForm {
+  username: string;
+  email: string;
+  password?: string;
+  role_type: RoleType | "";
 }
 
 interface RoleCountResponse {
@@ -36,55 +40,39 @@ interface RoleCountResponse {
   total_users: number;
 }
 
-const AdminUsers: React.FC = () => {
-  const [roleCount, setRoleCount] = useState<RoleCountResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const ROLES: { value: RoleType; label: string }[] = [
+  { value: "inward", label: "Inward" },
+  { value: "programer", label: "Programer" },
+  { value: "qa", label: "QA" },
+  { value: "accountent", label: "Accountant" },
+  { value: "admin", label: "Admin" },
+];
 
-  // ⭐ NEW STATE TO STORE USERS FOR TABLE
-  const [createdUsers, setCreatedUsers] = useState<SignupForm[]>([]);
+const PAGE_SIZE = 10;
 
-  const { register, handleSubmit, reset } = useForm<SignupForm>();
-  const { toast } = useToast();
+const AdminUsersAdvanced: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL;
+  const { toast } = useToast();
 
-  const onSubmit = async (data: SignupForm) => {
-    setIsSubmitting(true);
-    try {
-      const response = await fetch(`${API_URL}/api/single_signup/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-      if (response.ok && result.msg === "signup successful") {
-        toast({
-          title: "✅ User Created",
-          description: `${data.username} was added successfully!`,
-        });
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"" | RoleType | "all">("");
+  const [sortBy, setSortBy] = useState<"username" | "email" | "role_type">("username");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [page, setPage] = useState(1);
 
-        // ⭐ ADD USER TO TABLE
-        setCreatedUsers((prev) => [...prev, data]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
-        reset();
-      } else {
-        toast({
-          title: "⚠️ Error",
-          description: result.msg || "Failed to create user.",
-          variant: "destructive",
-        });
-      }
-    } catch {
-      toast({
-        title: "❌ Network Error",
-        description: "Server connection failed.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const [selected, setSelected] = useState<UserItem | null>(null);
+  const [processing, setProcessing] = useState(false);
+
+  const [roleCount, setRoleCount] = useState<RoleCountResponse | null>(null);
+
 
   useEffect(() => {
     const fetchRoleCounts = async () => {
@@ -109,88 +97,192 @@ const AdminUsers: React.FC = () => {
     fetchRoleCounts();
   }, [API_URL, toast]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh] text-gray-600">
-        <Loader2 className="animate-spin mr-2" /> Loading user data...
-      </div>
-    );
-  }
+  /* ----------- ADD FORM ----------- */
+  const {
+    register: registerAdd,
+    handleSubmit: handleAddSubmit,
+    reset: resetAdd,
+    formState: { errors: addErrors },
+  } = useForm<UserForm>({
+    defaultValues: { username: "", email: "", password: "", role_type: "" },
+  });
 
+  /* ----------- EDIT FORM ----------- */
+  const {
+    register: registerEdit,
+    handleSubmit: handleEditSubmit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+  } = useForm<UserForm>({
+    defaultValues: { username: "", email: "", password: "", role_type: "" },
+  });
+
+  /* ----------- FETCH USERS (matches backend) ----------- */
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const resp = await fetch(`${API_URL}/api/get_all_users/`);
+      const json = await resp.json();
+
+      if (!resp.ok) throw new Error(json?.msg || "Failed to load users");
+
+      setUsers(json.data || []);
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error loading users", description: String(err) });
+    } finally {
+      setLoading(false);
+    }
+  }, [API_URL, toast]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers, refreshKey]);
+
+  /* ----------- FILTER + SORT + PAGINATION ----------- */
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let out = [...users];
+
+    if (roleFilter && roleFilter !== "all") {
+      out = out.filter((u) => u.role_type === roleFilter);
+    }
+
+    if (q) {
+      out = out.filter(
+        (u) =>
+          u.username.toLowerCase().includes(q) ||
+          u.email.toLowerCase().includes(q) ||
+          u.role_type.toLowerCase().includes(q)
+      );
+    }
+
+    out.sort((a, b) => {
+      const aKey = String(a[sortBy] ?? "").toLowerCase();
+      const bKey = String(b[sortBy] ?? "").toLowerCase();
+      if (aKey < bKey) return sortDir === "asc" ? -1 : 1;
+      if (aKey > bKey) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return out;
+  }, [users, query, roleFilter, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const toggleSort = (field: "username" | "email" | "role_type") => {
+    if (sortBy === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortBy(field);
+      setSortDir("asc");
+    }
+  };
+
+  /* ----------- CREATE USER (matches backend /create_user/) ----------- */
+  const onAdd = async (data: UserForm) => {
+    setProcessing(true);
+    try {
+      const resp = await fetch(`${API_URL}/api/create_user/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.msg);
+
+      setRefreshKey((k) => k + 1);
+      resetAdd();
+      setAddOpen(false);
+
+      toast({ title: "User created successfully" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Create failed", description: String(err) });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  /* ----------- OPEN EDIT ----------- */
+  const onOpenEdit = (u: UserItem) => {
+    setSelected(u);
+    resetEdit({
+      username: u.username,
+      email: u.email,
+      password: "",
+      role_type: u.role_type,
+    });
+    setEditOpen(true);
+  };
+
+  /* ----------- UPDATE USER (matches /update_user/<id>/) ----------- */
+  const onEdit = async (data: UserForm) => {
+    if (!selected) return;
+
+    setProcessing(true);
+    try {
+      const resp = await fetch(`${API_URL}/api/update_user/${selected.id}/`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.msg);
+
+      setRefreshKey((k) => k + 1);
+      setEditOpen(false);
+      setSelected(null);
+
+      toast({ title: "User updated" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Update failed", description: String(err) });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  /* ----------- DELETE USER (matches /delete_user/<id>/) ----------- */
+  const onDelete = async () => {
+    if (!selected) return;
+
+    setProcessing(true);
+    try {
+      const resp = await fetch(`${API_URL}/api/delete_user/${selected.id}/`, {
+        method: "DELETE",
+      });
+
+      const json = await resp.json();
+      if (!resp.ok) throw new Error(json.msg);
+
+      setUsers((prev) => prev.filter((x) => x.id !== selected.id));
+      setDeleteOpen(false);
+      setSelected(null);
+      setRefreshKey((k) => k + 1);
+
+      toast({ title: "User deleted" });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Delete failed", description: String(err) });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  /* ----------- ROLE BADGE ----------- */
+  const roleBadge = (r: RoleType) => {
+    const map: Record<RoleType, string> = {
+      inward: "bg-blue-100 text-blue-800",
+      programer: "bg-green-100 text-green-800",
+      qa: "bg-purple-100 text-purple-800",
+      admin: "bg-red-100 text-red-800",
+      accountent: "bg-orange-100 text-orange-800",
+    };
+    return map[r];
+  };
+
+  /* ----------- RENDER ----------- */
   return (
-    <div className="space-y-6 w-full">
-      {/* Header with New User Button */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-              <UserPlus className="w-4 h-4" />
-              New User
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>
-                Fill out the details below to add a new user.
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <Label>Username</Label>
-                <Input
-                  placeholder="Enter username"
-                  {...register("username", { required: true })}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  placeholder="Enter email"
-                  {...register("email", { required: true })}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <Label>Password</Label>
-                <Input
-                  type="password"
-                  placeholder="Enter password"
-                  {...register("password", { required: true })}
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div>
-                <Label>Role Type</Label>
-                <select
-                  {...register("role_type", { required: true })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  disabled={isSubmitting}
-                >
-                  <option value="">Select Role</option>
-                  <option value="inward">Inward</option>
-                  <option value="programer">Programer</option>
-                  <option value="qa">QA</option>
-                  <option value="admin">Admin</option>
-                  <option value="accountent">Accountant</option>
-                </select>
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create User"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+    <div className="space-y-6">
 
       {/* Role Count Cards */}
       {roleCount && (
@@ -219,77 +311,266 @@ const AdminUsers: React.FC = () => {
         </div>
       )}
 
-      {/* ⭐ IMPROVED TABLE SECTION */}
-      <div className="w-full bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Created Users</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            List of users created through this interface
-          </p>
+      {/* ---------------- SEARCH / FILTER / SORT ---------------- */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Input
+            placeholder="Search..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-72"
+          />
+
+          <select
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.target.value as RoleType | "all" | "");
+              setPage(1);
+            }}
+            className="rounded-md border px-3 py-2"
+          >
+            <option value="">All Roles</option>
+            {ROLES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex items-center gap-1 text-sm text-gray-600">
+            <span>Sort:</span>
+            <button onClick={() => toggleSort("username")} className="px-2 py-1 flex gap-1">
+              Username <ChevronsUpDown className="w-4 h-4" />
+            </button>
+            <button onClick={() => toggleSort("email")} className="px-2 py-1 flex gap-1">
+              Email <ChevronsUpDown className="w-4 h-4" />
+            </button>
+            <button onClick={() => toggleSort("role_type")} className="px-2 py-1 flex gap-1">
+              Role <ChevronsUpDown className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                  Username
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                  Status
-                </th>
+        {/* ---------------- ADD USER ---------------- */}
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 text-white flex items-center gap-2">
+              <UserPlus className="w-4 h-4" /> New User
+            </Button>
+          </DialogTrigger>
+
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Create User</DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={handleAddSubmit(onAdd)} className="space-y-4">
+              <div>
+                <Label>Username</Label>
+                <Input {...registerAdd("username", { required: "Required" })} disabled={processing} />
+              </div>
+
+              <div>
+                <Label>Email</Label>
+                <Input
+                  {...registerAdd("email", {
+                    required: "Required",
+                    pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email" },
+                  })}
+                  disabled={processing}
+                />
+              </div>
+
+              <div>
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  {...registerAdd("password", { required: "Required" })}
+                  disabled={processing}
+                />
+              </div>
+
+              <div>
+                <Label>Role</Label>
+                <select
+                  {...registerAdd("role_type", { required: "Required" })}
+                  className="w-full border rounded px-3 py-2"
+                  disabled={processing}
+                >
+                  <option value="">Select role</option>
+                  {ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAddOpen(false)} disabled={processing}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={processing}>
+                  {processing ? "Creating..." : "Create"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* ---------------- USER TABLE ---------------- */}
+      <Card className="overflow-x-auto">
+        {loading ? (
+          <div className="h-40 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin" />
+          </div>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-center border">
+                <th className="px-4 py-3 border">S.no.</th>
+                <th className="px-4 py-3 border">Username</th>
+                <th className="px-4 py-3 border">Email</th>
+                <th className="px-4 py-3 border">Role</th>
+                <th className="px-4 py-3 border w-[15%]">Actions</th>
               </tr>
             </thead>
 
-            <tbody className="bg-white divide-y divide-gray-200">
-              {createdUsers.length === 0 ? (
+            <tbody>
+              {pageData.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <UserPlus className="w-12 h-12 mb-2 text-gray-300" />
-                      <p className="text-sm">No users added yet</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Create your first user by clicking the "New User" button
-                      </p>
-                    </div>
+                  <td colSpan={5} className="text-center py-10 text-gray-500">
+                    No users found
                   </td>
                 </tr>
               ) : (
-                createdUsers.map((user, index) => (
-                  <tr key={index} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.username}
+                pageData.map((u, idx) => (
+                  <tr key={u.id} className="border-t hover:bg-gray-50 text-center">
+                    <td className="px-4 py-3 border">{(page - 1) * PAGE_SIZE + idx + 1}</td>
+                    <td className="px-4 py-3 border">{u.username}</td>
+                    <td className="px-4 py-3 border">{u.email}</td>
+                    <td className="px-4 py-3 border">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${roleBadge(u.role_type)}`}
+                      >
+                        {u.role_type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 border">
+                      <div className="flex justify-center gap-2">
+                        <Button size="sm" variant="outline" onClick={() => onOpenEdit(u)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => { setSelected(u); setDeleteOpen(true); }}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-600">{user.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
-                        {user.role_type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Active
-                      </span>
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        )}
+      </Card>
+
+      {/* ---------------- PAGINATION ---------------- */}
+      <div className="flex justify-end items-center mt-4 text-sm">
+
+        <div className="flex items-center gap-2">
+          <Button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            Prev
+          </Button>
+          <div className="px-3 py-1 border rounded">
+            {page} / {totalPages}
+          </div>
+          <Button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
+            Next
+          </Button>
         </div>
       </div>
+
+      {/* ---------------- EDIT DIALOG ---------------- */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleEditSubmit(onEdit)} className="space-y-4">
+            <div>
+              <Label>Username</Label>
+              <Input {...registerEdit("username", { required: "Required" })} />
+            </div>
+
+            <div>
+              <Label>Email</Label>
+              <Input
+                {...registerEdit("email", {
+                  required: "Required",
+                  pattern: { value: /^\S+@\S+\.\S+$/, message: "Invalid email" },
+                })}
+              />
+            </div>
+
+            <div>
+              <Label>Password (optional)</Label>
+              <Input {...registerEdit("password")} type="password" />
+            </div>
+
+            <div>
+              <Label>Role</Label>
+              <select {...registerEdit("role_type", { required: "Required" })} className="w-full border px-3 py-2 rounded">
+                <option value="">Select role</option>
+                {ROLES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)} className="hover:bg-gray-300 hover:text-black">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={processing}>
+                {processing ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---------------- DELETE DIALOG ---------------- */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Confirm Delete</DialogTitle>
+          </DialogHeader>
+
+          <p>
+            Are you sure you want to delete <strong>{selected?.username}</strong>?
+          </p>
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={processing}
+              className="hover:bg-gray-300 hover:text-black"
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={onDelete} disabled={processing}>
+              {processing ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default AdminUsers;
+export default AdminUsersAdvanced;

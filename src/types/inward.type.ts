@@ -41,7 +41,7 @@ export interface Material {
   stock_due: number | string;
   remarks: string;
 
-  programer_status: string;
+  programer_status?: string;
   qa_status?: string;
   acc_status?: string;
 }

@@ -56,7 +56,8 @@ const AdminCompanies: React.FC = () => {
   const [uploadedFileName, setUploadedFileName] = useState("");
 
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -127,11 +128,11 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
 
   /* -------------------- ADD COMPANY -------------------- */
-  const handleChange = (e: any) => {
+  const handleChange = (e) => {
     setFormData((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
-  const handleAddCompany = async (e: any) => {
+  const handleAddCompany = async (e) => {
     e.preventDefault();
 
     if (!formData.company_name.trim() || !formData.customer_name.trim()) {
@@ -166,7 +167,7 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   };
 
   /* -------------------- BULK UPLOAD -------------------- */
-  const handleFileUpload = (e: any) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -182,18 +183,37 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
         const parsed: BulkCompany[] = [];
 
-        rows.forEach((row: any) => {
-          const company_name = row["company_name"] || row["Company Name"];
-          const customer_name = row["customer_name"] || row["Customer Name"];
+        rows.forEach((row) => {
+          const company_name =
+            row["company_name"] ||
+            row["Company Name"] ||
+            row["COMPANY NAME"];
+
+          const customer_name =
+            row["customer_name"] ||
+            row["Customer Name"] ||
+            row["CUSTOMER NAME"];
+
+          const contact_no =
+            row["contact_no"] ||
+            row["Contact No"] ||
+            row["CONTACT NO"];
+
+          const customer_dc_no =
+            row["customer_dc_no"] ||
+            row["Customer DC No"] ||
+            row["CUSTOMER DC NO"];
+
           if (!company_name || !customer_name) return;
 
           parsed.push({
             company_name,
             customer_name,
-            contact_no: row["contact_no"] || "",
-            customer_dc_no: row["customer_dc_no"] || "",
+            contact_no: contact_no || "",
+            customer_dc_no: customer_dc_no || "",
           });
         });
+
 
         setPreviewCompanies(parsed);
       } finally {
@@ -204,9 +224,20 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
     reader.readAsBinaryString(file);
   };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    // Fake the structure so we can reuse handleFileUpload
+    handleFileUpload({ target: { files: [file] } });
+  };
+
+
   const handleBulkUpload = async () => {
     try {
-      const resp = await fetch(`${API_URL}/api/company_bulk_upload_create/`, {
+      const resp = await fetch(`${API_URL}/api/bulk_upload_company/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companies: previewCompanies }),
@@ -216,11 +247,12 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
       if (!resp.ok) throw new Error(data.message);
 
       toast({ title: "Bulk upload successful" });
+      await fetchCompanies();
       setPreviewCompanies([]);
       setUploadedFileName("");
-
-      fetchCompanies();
-    } catch (err: any) {
+      setOpenModal(false);
+      setActiveTab("single");
+    } catch (err) {
       toast({ variant: "destructive", title: "Upload failed", description: err.message });
     }
   };
@@ -232,7 +264,7 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
     setEditModalOpen(true);
   };
 
-  const handleEditChange = (e: any) => {
+  const handleEditChange = (e) => {
     setEditForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   };
 
@@ -259,20 +291,56 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
   };
 
   const handleDelete = async (comp: Company) => {
+    setDeleteLoading(true);
     try {
       const resp = await fetch(`${API_URL}/api/delete_company/${comp.id}/`, {
         method: "DELETE",
       });
 
       const data = await resp.json();
-      if (!resp.ok || !data.status) throw new Error(data.message);
+
+      if (!resp.ok || (data && data.status === false)) {
+        const msg = data?.message || "Delete failed";
+        throw new Error(msg);
+      }
+      // remove from UI immediately (optimistic)
+      setCompanies((prev) => prev.filter((c) => c.id !== comp.id));
 
       toast({ title: "Company deleted" });
-      fetchCompanies();
-    } catch (err: any) {
+    } catch (err) {
       toast({ variant: "destructive", title: "Delete failed", description: err.message });
+      throw err;
+    } finally {
+      setDeleteLoading(false);
     }
   };
+
+  // Called from the Confirm dialog - ensures single-shot confirm behavior
+  const confirmDelete = async () => {
+    if (!companyToDelete) return;
+
+    // prevent double clicks / duplicate calls
+    if (deleteLoading) return;
+
+    try {
+      await handleDelete(companyToDelete);
+      setConfirmDeleteOpen(false);
+      setCompanyToDelete(null);
+      // ensure list is in sync
+      fetchCompanies();
+    } catch {
+      // keep modal open? we close and allow user to retry; either is acceptable:
+      setConfirmDeleteOpen(false);
+      setCompanyToDelete(null);
+    }
+  };
+
+  // Exposed deletion via row button: sets state and opens confirm dialog
+  const requestDelete = (comp: Company) => {
+    setCompanyToDelete(comp);
+    setConfirmDeleteOpen(true);
+  };
+
 
   /* -------------------- UI -------------------- */
   return (
@@ -392,7 +460,10 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
                   <div className="animate-fadeIn space-y-4">
 
                     {/* File upload area */}
-                    <div className="border border-dashed p-5 text-center rounded-lg">
+                    <div className="flex justify-center items-center mt-20 border border-dashed p-5 text-center rounded-lg"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={handleDrop}
+                    >
                       {!uploadedFileName ? (
                         <Label htmlFor="bulk" className="cursor-pointer">
                           <Upload className="mx-auto h-10 w-10 text-blue-500" />
@@ -417,6 +488,7 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
                               setUploadedFileName("");
                               setPreviewCompanies([]);
                             }}
+                            className="hover:bg-blue-700 hover:text-white"
                           >
                             <X className="w-4 h-4" /> Change File
                           </Button>
@@ -433,9 +505,9 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
                           <table className="w-full text-sm">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th className="p-2">#</th>
-                                <th className="p-2">Company</th>
-                                <th className="p-2">Customer</th>
+                                <th className="p-2">s.no.</th>
+                                <th className="p-2">Company Name</th>
+                                <th className="p-2">Customer Name</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -485,10 +557,10 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
               <thead>
                 <tr className="bg-gray-100 text-center">
                   <th className="p-2 border">S.No</th>
-                  <th className="p-2 border">Company</th>
-                  <th className="p-2 border">Customer</th>
-                  <th className="p-2 border">Contact</th>
-                  <th className="p-2 border">Customer DC</th>
+                  <th className="p-2 border">Company Name</th>
+                  <th className="p-2 border">Customer Name</th>
+                  <th className="p-2 border">Contact No.</th>
+                  <th className="p-2 border">Customer DC No.</th>
                   <th className="p-2 border w-[10%]">Action</th>
                 </tr>
               </thead>
@@ -516,11 +588,9 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => {
-    setCompanyToDelete(c);
-    setConfirmDeleteOpen(true);
-  }}
+                          onClick={() => requestDelete(c)}
                           className="flex items-center gap-1 hover:scale-110"
+                          disabled={deleteLoading}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -636,7 +706,7 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
             <Button
               variant="outline"
               onClick={() => setEditModalOpen(false)}
-              className="px-6"
+              className="px-6 hover:bg-gray-200 hover:text-black "
             >
               Cancel
             </Button>
@@ -659,43 +729,42 @@ const [companyToDelete, setCompanyToDelete] = useState<Company | null>(null);
 
       {/* Delete MODAL */}
       <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-  <DialogContent className="max-w-sm rounded-lg">
-    <DialogHeader>
-      <DialogTitle className="text-red-600 font-semibold">
-        Confirm Delete
-      </DialogTitle>
-    </DialogHeader>
+        <DialogContent className="max-w-sm rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 font-semibold">
+              Confirm Delete
+            </DialogTitle>
+          </DialogHeader>
 
-    <p className="text-gray-700 mt-2">
-      Are you sure you want to delete{" "}
-      <span className="font-semibold">{companyToDelete?.company_name}</span>?
-      <br />
-      This action cannot be undone.
-    </p>
+          <p className="text-gray-700 mt-2">
+            Are you sure you want to delete{" "}
+            <span className="font-semibold">{companyToDelete?.company_name}</span>?
+            <br />
+            This action cannot be undone.
+          </p>
 
-    <DialogFooter className="mt-4 flex justify-end gap-3">
+          <DialogFooter className="mt-4 flex justify-end gap-3">
 
-      <Button
-        variant="outline"
-        onClick={() => setConfirmDeleteOpen(false)}
-      >
-        Cancel
-      </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setConfirmDeleteOpen(false)}
+              disabled={deleteLoading}
+              className="hover:bg-gray-200 hover:text-black "
+            >
+              Cancel
+            </Button>
 
-      <Button
-        variant="destructive"
-        onClick={async () => {
-          if (!companyToDelete) return;
-          await handleDelete(companyToDelete);
-          setConfirmDeleteOpen(false);
-        }}
-      >
-        Delete
-      </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete} disabled={deleteLoading}
+            >
+              {deleteLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Delete"}
+            </Button>
 
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
 
     </div>

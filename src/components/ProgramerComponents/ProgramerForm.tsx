@@ -375,7 +375,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     processed_quantity: "Processed Quantity",
     balance_quantity: "Balance Quantity",
     used_weight: "Used Weight (Kg)",
-    number_of_sheets: "Number of Sheets",
+    number_of_sheets: "Number of Comp. per Sheets",
     cut_length_per_sheet: "Cut Length per Sheet",
     pierce_per_sheet: "Pierce per Sheet",
     processed_mins_per_sheet: "Minutes Processed per Sheet",
@@ -383,7 +383,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     total_meters: "Total Meters",
     total_piercing: "Total Piercings",
     total_used_weight: "Total Used Weight (Kg)",
-    total_no_of_sheets: "Total No.of Sheets",
+    total_no_of_sheets: "Total No.of Comp. per  Sheets",
     created_by: "Created By",
   };
 

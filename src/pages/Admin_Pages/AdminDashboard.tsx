@@ -6,6 +6,7 @@ import AdminProducts from "@/components/AdminComponents/AdminProduct.tsx";
 import AdminCompanies from "@/components/AdminComponents/AdminCompanies.tsx";
 import AdminOperators from "@/components/AdminComponents/AdminOperators.tsx";
 import AdminMaterials from "@/components/AdminComponents/AdminMaterials.tsx";
+import AdminMachines from "@/components/AdminComponents/AdminMachines.tsx";
 
 const AdminDashboardWrapper: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("products");
@@ -16,8 +17,8 @@ const AdminDashboardWrapper: React.FC = () => {
         return <AdminProducts />;
       case "users":
         return <AdminUsers />;
-      case "equipments":
-        return <AdminUsers />;
+      case "machines":
+        return <AdminMachines />;
       case "companies":
         return <AdminCompanies />;
       case "operators":
@@ -55,11 +56,11 @@ const AdminDashboardWrapper: React.FC = () => {
           </Button>
 
           <Button
-            variant={activeTab === "equipments" ? "default" : "outline"}
-            onClick={() => setActiveTab("equipments")}
+            variant={activeTab === "machines" ? "default" : "outline"}
+            onClick={() => setActiveTab("machines")}
             className="flex items-center gap-2 hover:bg-blue-600"
           >
-            <Users className="w-4 h-4" /> Equipments
+            <Users className="w-4 h-4" /> Machines
           </Button>
 
           <Button
