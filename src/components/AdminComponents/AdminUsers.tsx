@@ -294,9 +294,9 @@ const AdminUsersAdvanced: React.FC = () => {
               { title: "Programer", value: roleCount.count_programer, color: "green" },
               { title: "Accountant", value: roleCount.count_accountent, color: "orange" },
               { title: "Admin", value: roleCount.count_admin, color: "red" },
-              { title: "Total", value: roleCount.total_users, color: "teal" },
+              { title: "Total", value: roleCount.total_users, color: "white" },
             ].map(({ title, value, color }) => (
-              <Card key={title} className={`bg-${color}-50 border border-${color}-200`}>
+              <Card key={title} className={`bg-${color}-100 border border-${color}-200`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600">{title} Users</CardTitle>
                 </CardHeader>
@@ -347,9 +347,6 @@ const AdminUsersAdvanced: React.FC = () => {
             </button>
             <button onClick={() => toggleSort("email")} className="px-2 py-1 flex gap-1">
               Email <ChevronsUpDown className="w-4 h-4" />
-            </button>
-            <button onClick={() => toggleSort("role_type")} className="px-2 py-1 flex gap-1">
-              Role <ChevronsUpDown className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -410,7 +407,7 @@ const AdminUsersAdvanced: React.FC = () => {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setAddOpen(false)} disabled={processing}>
+                <Button variant="outline" onClick={() => setAddOpen(false)} disabled={processing} className="hover:bg-gray-200 hover:text-black">
                   Cancel
                 </Button>
                 <Button type="submit" disabled={processing}>
@@ -462,10 +459,10 @@ const AdminUsersAdvanced: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 border">
                       <div className="flex justify-center gap-2">
-                        <Button size="sm" variant="outline" onClick={() => onOpenEdit(u)}>
+                        <Button size="sm" variant="outline" onClick={() => onOpenEdit(u)} className="hover:bg-transparent hover:text-black hover:scale-110">
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => { setSelected(u); setDeleteOpen(true); }}>
+                        <Button size="sm" variant="destructive" onClick={() => { setSelected(u); setDeleteOpen(true); }} className="hover:scale-110">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -479,19 +476,25 @@ const AdminUsersAdvanced: React.FC = () => {
       </Card>
 
       {/* ---------------- PAGINATION ---------------- */}
-      <div className="flex justify-end items-center mt-4 text-sm">
+      <div className="flex justify-end items-center gap-3 mt-6 text-sm">
 
-        <div className="flex items-center gap-2">
-          <Button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-            Prev
-          </Button>
-          <div className="px-3 py-1 border rounded">
-            {page} / {totalPages}
-          </div>
-          <Button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-            Next
-          </Button>
-        </div>
+        <button
+          disabled={page === 1}
+          onClick={() => setPage((p) => p - 1)}
+          className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+        >
+          Prev
+        </button>
+        <span className="font-medium text-slate-700">
+          Page {page} / {totalPages}
+        </span>
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage((p) => p + 1)}
+          className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+        >
+          Next
+        </button>
       </div>
 
       {/* ---------------- EDIT DIALOG ---------------- */}

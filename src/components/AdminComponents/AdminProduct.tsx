@@ -55,17 +55,18 @@ const AdminProducts: React.FC = () => {
     const { toast } = useToast();
     const API_URL = import.meta.env.VITE_API_URL;
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 10;
+
     /* ---------------------- Status Colors ---------------------- */
     const getStatusColor = (status: string) => {
         switch (status?.toLowerCase()) {
             case "pending":
-                return "bg-yellow-100 text-yellow-700 border border-yellow-300";
+                return "bg-yellow-100 text-yellow-700 border border-yellow-300 hover:bg-yellow-100";
             case "completed":
-                return "bg-green-100 text-green-700 border border-green-300";
-            case "in progress":
-                return "bg-blue-100 text-blue-700 border border-blue-300";
+                return "bg-green-100 text-green-700 border border-green-300 hover:bg-green-100";
             default:
-                return "bg-gray-100 text-gray-700 border border-gray-300";
+                return "bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-100";
         }
     };
 
@@ -97,12 +98,6 @@ const AdminProducts: React.FC = () => {
     /* ---------------------- Handlers ---------------------- */
     const handleView = (product: ProductOverall) => setSelectedProduct(product);
     const handleBack = () => setSelectedProduct(null);
-
-    const handleProceedQA = () =>
-        toast({ title: "QA Process", description: "Proceeding to QA..." });
-    const handleProceedAccount = () =>
-        toast({ title: "Accounts Process", description: "Proceeding to Accounts..." });
-
     /* ---------------------- Live Filtering ---------------------- */
     useEffect(() => {
         const lowerSearch = searchQuery.toLowerCase();
@@ -125,6 +120,18 @@ const AdminProducts: React.FC = () => {
         setFilteredDetails(filtered);
     }, [searchQuery, statusFilter, allDetails]);
 
+
+    // PAGINATION
+    const totalPages = Math.ceil(filteredDetails.length / rowsPerPage);
+
+    const paginatedData = React.useMemo(() => {
+        const start = (currentPage - 1) * rowsPerPage;
+        return filteredDetails.slice(start, start + rowsPerPage);
+    }, [filteredDetails, currentPage]);
+
+
+
+
     /* ---------------------- Render ---------------------- */
     if (loading) {
         return (
@@ -137,10 +144,10 @@ const AdminProducts: React.FC = () => {
     if (selectedProduct) {
         return (
             <AdminProductDetail
-      product={selectedProduct}
-      onBack={handleBack}
-      getStatusColor={getStatusColor}
-    />
+                product={selectedProduct}
+                onBack={handleBack}
+                getStatusColor={getStatusColor}
+            />
         );
     }
 
@@ -184,7 +191,7 @@ const AdminProducts: React.FC = () => {
             </div>
 
             {/* Table */}
-            {filteredDetails.length === 0 ? (
+            {paginatedData.length === 0 ? (
                 <p className="text-gray-500 italic text-center">No products found.</p>
             ) : (
                 <Card className="border shadow-sm">
@@ -249,6 +256,34 @@ const AdminProducts: React.FC = () => {
                     </div>
                 </Card>
             )}
+
+            {/* Pagination Buttons */}
+            {totalPages > 1 && (
+                <div className="flex justify-end items-center gap-3 mt-6 text-sm">
+
+                    <button
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => prev - 1)}
+                        className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                    >
+                        Prev
+                    </button>
+
+                    <span className="font-medium text-slate-700">
+                        Page {currentPage} / {totalPages}
+                    </span>
+
+                    <button
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                    >
+                        Next
+                    </button>
+
+                </div>
+            )}
+
         </div>
     );
 };

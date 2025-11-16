@@ -141,6 +141,7 @@ const ProgramerDashboard: React.FC = () => {
     );
   }
 
+
   return (
     <div className="p-12">
       <div className="max-w-8xl mx-auto">
@@ -207,33 +208,43 @@ const ProgramerDashboard: React.FC = () => {
             {/* ---------------------- LIST VIEW ---------------------- */}
             {view === "list" && (
               <>
-                <ProgramList data={paginatedData} onView={handleViewDetail} />
-
-                {/* Pagination Buttons */}
-                {totalPages > 1 && (
-                  <div className="flex justify-end items-center gap-3 mt-6 text-sm">
-
-                    <button
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(prev => prev - 1)}
-                      className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
-                    >
-                      Prev
-                    </button>
-
-                    <span className="font-medium text-slate-700">
-                      Page {currentPage} / {totalPages}
-                    </span>
-
-                    <button
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage(prev => prev + 1)}
-                      className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
-                    >
-                      Next
-                    </button>
-
+                {FormData.length === 0 ? (
+                  <div className="flex justify-center items-center py-20">
+                    <p className="text-lg font-medium text-slate-600">
+                      No product found.
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <ProgramList data={paginatedData} onView={handleViewDetail} />
+
+                    {/* Pagination Buttons */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-end items-center gap-3 mt-6 text-sm">
+
+                        <button
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(prev => prev - 1)}
+                          className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                        >
+                          Prev
+                        </button>
+
+                        <span className="font-medium text-slate-700">
+                          Page {currentPage} / {totalPages}
+                        </span>
+
+                        <button
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage(prev => prev + 1)}
+                          className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                        >
+                          Next
+                        </button>
+
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

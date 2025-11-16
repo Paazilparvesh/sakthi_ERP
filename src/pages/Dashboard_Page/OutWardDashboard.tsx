@@ -42,6 +42,36 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
+
+  const programMaterialMap = useMemo(() => {
+    const map: Record<number, boolean> = {};
+
+    program.forEach((p) => {
+      if (p.material_details) {
+        map[p.material_details] = true;
+      }
+    });
+
+    return map;
+  }, [program]);
+
+  const programmedProductIds = useMemo(() => {
+    const set = new Set<number>();
+
+    program.forEach((p: any) => {
+      if (p.product_details) {
+        set.add(
+          typeof p.product_details === "object"
+            ? p.product_details.id
+            : p.product_details
+        );
+      }
+    });
+
+    return set;
+  }, [program]);
+
+
   // --------------------------------
   // Fetch Data from New API Endpoint
   // --------------------------------
@@ -90,15 +120,6 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
     setView("list");
   };
 
-  const handleFormSuccess = async () => {
-    await fetchProducts();
-    handleBack();
-    toast({
-      title: "✅ Process Added",
-      description: "Product updated successfully.",
-    });
-  };
-
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, statusFilter]);
@@ -107,31 +128,31 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
     if (!selectedProduct) return [];
     return program.filter(
       (prog) =>
-        prog.product_details === selectedProduct.id ||
-        prog.product_details?.id === selectedProduct.id
+        Number(prog.product_details) === Number(selectedProduct.id) ||
+        (prog.product_details && prog.product_details.id === selectedProduct.id)
     );
   }, [program, selectedProduct]);
 
   const filteredProduct = useMemo(() => {
     const search = searchQuery.toLowerCase();
 
-    // 1. Filter
-    const results = products.filter((item) => {
-      const matchesSearch =
-        item.company_name?.toLowerCase().includes(search) ||
-        item.customer_name?.toLowerCase().includes(search) ||
-        item.serial_number?.toLowerCase().includes(search);
+    return products
+      .filter((item) => {
+        const matchesSearch =
+          item.company_name?.toLowerCase().includes(search) ||
+          item.customer_name?.toLowerCase().includes(search) ||
+          item.serial_number?.toLowerCase().includes(search);
 
-      const matchesStatus =
-        statusFilter === "all" ||
-        item.qa_status?.toLowerCase() === statusFilter.toLowerCase();
+        const matchesStatus =
+          statusFilter === "all" ||
+          item.outward_status?.toLowerCase() === statusFilter.toLowerCase();
 
-      return matchesSearch && matchesStatus;
-    });
-
-    // 2. Sort DESC by ID or date
-    return results.sort((a, b) => b.id - a.id);
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => b.id - a.id);
   }, [products, searchQuery, statusFilter]);
+
+
 
   // PAGINATION
   const totalPages = Math.ceil(filteredProduct.length / rowsPerPage);
@@ -140,6 +161,34 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
     const start = (currentPage - 1) * rowsPerPage;
     return filteredProduct.slice(start, start + rowsPerPage);
   }, [filteredProduct, currentPage]);
+
+  // --- derive up-to-date product object from products array to avoid stale selectedProduct
+  const currentProduct = useMemo(() => {
+    if (!selectedProduct) return null;
+    const fresh = products.find((p) => p.id === selectedProduct.id);
+    return fresh ?? selectedProduct; // fallback to whatever was selected if not found
+  }, [products, selectedProduct]);
+
+  // Check if there's at least one material that:
+  // - has programmer data (programMaterialMap[mat.id] === true)
+  // - still needs QA (mat.qa_status === 'pending')
+  const hasPendingProgrammedMaterial = useMemo(() => {
+    if (!currentProduct) return false;
+    return (currentProduct.materials || []).some(
+      (mat: any) => programMaterialMap[mat.id] && (String(mat.qa_status).toLowerCase() === "pending")
+    );
+  }, [currentProduct, programMaterialMap]);
+
+
+  const hasPendingAccountMaterial = useMemo(() => {
+    if (!currentProduct) return false;
+
+    return currentProduct.materials.some(
+      (mat: any) =>
+        programMaterialMap[mat.id] && // programmed
+        String(mat.acc_status).toLowerCase() === "pending" // account pending
+    );
+  }, [currentProduct, programMaterialMap]);
 
 
   const headerTitle = React.useMemo(() => {
@@ -218,9 +267,9 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
                   Back
                 </button>
 
-                {selectedProduct.outward_status?.toLowerCase() === "pending" && (
+                {currentProduct?.outward_status?.toLowerCase() === "pending" && (
                   <>
-                    {selectedProduct.qa_status?.toLowerCase() === "pending" && selectedProduct.programer_status?.toLowerCase() === "completed" ?   (
+                    {/* {selectedProduct.qa_status?.toLowerCase() === "pending" && selectedProduct.programer_status?.toLowerCase() === "completed" ?   (
                       <Button
                         onClick={onProceedQA}
                         className="bg-blue-700 hover:bg-blue-800 text-white"
@@ -228,8 +277,21 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
                         Proceed to QA
                       </Button>
                     ) : (<p className="flex items-center">
-                      Programer Data isnt filled</p>)}
-                    {role === "accountent" && (
+                      Programer Data isnt filled</p>)} */}
+                    {hasPendingProgrammedMaterial && currentProduct.qa_status?.toLowerCase() === "pending" ? (
+                      <Button
+                        onClick={onProceedQA}
+                        className="bg-blue-700 hover:bg-blue-800 text-white"
+                      >
+                        Proceed to QA
+                      </Button>
+                    ) : (
+                      // <p className="flex items-center text-red-600">
+                      //   Programmer data isn’t filled for all materials
+                      // </p>
+                      ""
+                    )}
+                    {role === "accountent" && hasPendingAccountMaterial && (
                       <Button
                         onClick={onProceedAccount}
                         className="bg-green-700 hover:bg-green-800 text-white"
@@ -237,6 +299,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
                         Proceed to Accounts
                       </Button>
                     )}
+
                   </>
                 )}
               </div>
@@ -291,7 +354,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
 
         {view === "detail" && selectedProduct && (
           <OutwardDetail
-            product={selectedProduct}
+            product={currentProduct}
             program={filteredProgram}
             getStatusColor={getStatusColor}
           />
@@ -299,10 +362,19 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
 
         {view === "qaForm" && selectedProduct && (
           <QAForm
-            productId={selectedProduct.id}
-            companyName={selectedProduct.company_name}
-            materials={selectedProduct.materials}
-            onBack={() => setView("list")}
+            productId={currentProduct.id}
+            companyName={currentProduct.company_name}
+            // materials={currentProduct.materials}
+            materials={(currentProduct.materials || []).filter(
+              (m: any) => programMaterialMap[m.id] && String(m.qa_status).toLowerCase() === "pending"
+            )}
+            program={filteredProgram}
+            // onBack={() => setView("list")}
+            onBack={() => {
+              // refresh data (ensures QA button/ detail uses fresh product data)
+              fetchProducts();
+              setView("detail");
+            }}
             onSubmitSuccess={fetchProducts}
           />
         )}
@@ -310,9 +382,14 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
 
         {view === "accForm" && selectedProduct && (
           <AccountForm
-            productId={selectedProduct.id}
-            companyName={selectedProduct.company_name}
-            materials={selectedProduct.materials}
+            productId={currentProduct.id}
+            companyName={currentProduct.company_name}
+            materials={(currentProduct.materials || []).filter(
+              (m: any) =>
+                programMaterialMap[m.id] && // programmed
+                String(m.acc_status).toLowerCase() === "pending" // account pending only
+            )}
+
             onBack={() => setView("list")}
             onSubmitSuccess={fetchProducts}
           />

@@ -109,12 +109,12 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
         <div className="space-y-4">
           {renderFieldCard("Date", item.date || "-")}
           {renderFieldCard("Customer Name", item.customer_name)}
-          {renderFieldCard("Worker Number", item.worker_no || "-")}
+          {renderFieldCard("Work Order Number", item.worker_no || "-")}
         </div>
 
         <div className="space-y-4">
           {renderFieldCard("Inward Slip Number", item.inward_slip_number || "-")}
-          {renderFieldCard("Customer Number", item.customer_dc_no)}
+          {renderFieldCard("Customer Document Number", item.customer_dc_no)}
           {renderFieldCard("Color", item.color || "-")}
         </div>
       </div>

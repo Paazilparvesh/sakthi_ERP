@@ -28,13 +28,13 @@ interface ProgramerDetail {
 }
 
 interface QaDetail {
-    qa_detail_id: number;
+    id: number;
     processed_date: string;
     shift: string;
     no_of_sheets: number;
     cycletime_per_sheet: number;
     total_cycle_time: number;
-    machine_used: string;
+    machines_used: { machine: string; time: string }[];
     operator_name: string;
     product_id: number;
     material_id: number;
@@ -374,7 +374,7 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                     </h3>
                     <div className="space-y-6">
                         {selectedMaterialQaDetails.map((qa) => (
-                            <Card key={qa.qa_detail_id} className="border p-4 rounded-xl">
+                            <Card key={qa.id} className="border p-4 rounded-xl">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <InfoCard label="Processed Date" value={qa.processed_date} />
                                     <InfoCard label="Shift" value={qa.shift} />
@@ -387,9 +387,32 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({
                                         label="Total Cycle Time"
                                         value={qa.total_cycle_time}
                                     />
-                                    <InfoCard label="Machine Used" value={qa.machine_used} />
+
                                     <InfoCard label="Operator Name" value={qa.operator_name} />
                                     <InfoCard label="Created By" value={qa.created_by} />
+                                    {/* Machines Used – now supports array */}
+                                    <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                                        <h4 className="text-sm font-semibold text-gray-600 mb-2">
+                                            Machines Used
+                                        </h4>
+
+                                        {qa.machines_used && qa.machines_used.length > 0 ? (
+                                            <div className="space-x-4 flex justify-start items-center">
+                                                {qa.machines_used.map((m, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="w-[20%] flex justify-between bg-gray-100 p-3 rounded-lg text-sm"
+                                                    >
+                                                        <span className="font-medium text-gray-700">{m.machine}</span>
+                                                        <span className="text-gray-600">{m.time} Mins</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-500 italic text-sm">No machines recorded</p>
+                                        )}
+                                    </div>
+
                                 </div>
                             </Card>
                         ))}

@@ -19,6 +19,8 @@ interface ProgramerFormData {
   program_date: string;
   processed_quantity: string;
   balance_quantity: string;
+  processed_width?: string,
+  processed_length?: string,
   used_weight: string;
   number_of_sheets: string;
   cut_length_per_sheet: string;
@@ -64,6 +66,8 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     program_date: "",
     processed_quantity: "",
     balance_quantity: "",
+    processed_width: "",
+    processed_length: "",
     used_weight: "",
     number_of_sheets: "",
     cut_length_per_sheet: "",
@@ -76,6 +80,20 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     total_no_of_sheets: "",
     created_by: ""
   });
+
+  const [remainingMaterial, setRemainingMaterial] = useState<{
+    width: string;
+    length: string;
+    original_width: number;
+    original_length: number;
+  }>({
+    width: "",
+    length: "",
+    original_width: 0,
+    original_length: 0,
+  });
+
+
 
   // keep product ID synced if `item` changes
   useEffect(() => {
@@ -127,16 +145,28 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
   const recalculateTotals = (data: ProgramerFormData) => {
     const num = (v: string) => Number(v) || 0;
-    const totalPlannedHours = num(data.processed_quantity) * num(data.processed_mins_per_sheet);
-    const totalMeters = num(data.processed_quantity) * num(data.cut_length_per_sheet);
-    const totalPiercing = num(data.processed_quantity) * num(data.pierce_per_sheet);
-    const totalWeight = num(data.processed_quantity) * num(data.used_weight);
-    const totalSheet = num(data.processed_quantity) * num(data.number_of_sheets);
+
+    const processedQty = num(data.processed_quantity);
+    const minsPerSheet = num(data.processed_mins_per_sheet);
+    const cutLength = num(data.cut_length_per_sheet);
+
+    // Total minutes
+    const totalMinutes = processedQty * minsPerSheet;
+
+    // Convert minutes → HH:MM
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const totalPlannedHours = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+    const totalMeters = processedQty < 1 ? cutLength : processedQty * cutLength;
+    const totalPiercing = processedQty * num(data.pierce_per_sheet);
+    const totalWeight = processedQty * num(data.used_weight);
+    const totalSheet = processedQty * num(data.number_of_sheets);
 
     return {
       total_piercing: totalPiercing.toString(),
       total_used_weight: totalWeight.toString(),
-      total_planned_hours: totalPlannedHours.toString(),
+      total_planned_hours: totalPlannedHours,
       total_meters: totalMeters.toString(),
       total_no_of_sheets: totalSheet.toString(),
     };
@@ -179,7 +209,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
         "cut_length_per_sheet",
         "pierce_per_sheet",
         "processed_mins_per_sheet",
-        "total_planned_hours",
         "total_meters",
         "total_piercing",
         "total_used_weight",
@@ -189,6 +218,12 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     ) {
       error = `${LABELS[name as keyof ProgramerFormData]} must be a number.`;
     }
+
+    if ((name === "processed_width" || name === "processed_length")
+      && Number(formData.balance_quantity) === 0) {
+      return ""; // skip validation
+    }
+
 
     setFormErrors((prev) => ({ ...prev, [name]: error }));
     return error;
@@ -286,6 +321,18 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
         updated.processed_quantity = "";
         updated.balance_quantity = qty.toString();
+
+        // ✅ Pre-fill remaining material dimensions
+        if (selectedMat) {
+          setRemainingMaterial({
+            width: selectedMat.width?.toString() || "",
+            length: selectedMat.length?.toString() || "",
+            original_width: Number(selectedMat.width) || 0,
+            original_length: Number(selectedMat.length) || 0,
+          });
+
+        }
+
       }
 
       // 🔹 Auto-update balance
@@ -297,6 +344,29 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
         updated.balance_quantity = balance.toString();
       }
+
+      // 🔹 Width auto-calc
+      if (name === "processed_width") {
+        const processedW = Number(value) || 0;
+        const remainingW = (remainingMaterial.original_width || 0) - processedW;
+
+        setRemainingMaterial((prev) => ({
+          ...prev,
+          width: remainingW < 0 ? "0" : remainingW.toString(),
+        }));
+      }
+
+      // 🔹 Length auto-calc
+      if (name === "processed_length") {
+        const processedL = Number(value) || 0;
+        const remainingL = (remainingMaterial.original_length || 0) - processedL;
+
+        setRemainingMaterial((prev) => ({
+          ...prev,
+          length: remainingL < 0 ? "0" : remainingL.toString(),
+        }));
+      }
+
 
       return updated;
     });
@@ -331,12 +401,64 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
     try {
       setIsSubmitting(true);
-      const payload = { ...formData, created_by };
+
+      const balanceQty = formData.balance_quantity;
+
+      const selectedMaterialId = formData.material_details;
+
+      // ------------------------------------------------------
+      // 1️⃣ ONLY CREATE UPDATED MATERIAL IF BALANCE > 0
+      // ------------------------------------------------------
+      if (Number(balanceQty) > 0) {
+        const materialPayload = {
+          product_details: formData.product_details,
+          material_id: selectedMaterialId,
+          remaining_width: remainingMaterial.width,
+          remaining_length: remainingMaterial.length,
+          balance_quantity: balanceQty,
+        };
+
+        const matResponse = await fetch(
+          `${API_URL}/api/create_pending_material/`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(materialPayload),
+          }
+        );
+
+        const matResult = await matResponse.json();
+
+        if (!matResponse.ok) {
+          toast({
+            title: "Error",
+            description: matResult.error || "Failed to create updated material.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const programmerPayload = {
+        ...formData,
+        processed_width:
+          Number(formData.balance_quantity) === 0
+            ? remainingMaterial.original_width
+            : formData.processed_width,
+
+        processed_length:
+          Number(formData.balance_quantity) === 0
+            ? remainingMaterial.original_length
+            : formData.processed_length,
+
+        created_by
+      };
+
 
       const response = await fetch(`${API_URL}/api/add_programer_Details/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(programmerPayload),
       });
 
       const result = await response.json();
@@ -374,6 +496,10 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     program_date: "Program Date",
     processed_quantity: "Processed Quantity",
     balance_quantity: "Balance Quantity",
+
+    processed_width: "Processed Width",
+    processed_length: "Processed Length",
+
     used_weight: "Used Weight (Kg)",
     number_of_sheets: "Number of Comp. per Sheets",
     cut_length_per_sheet: "Cut Length per Sheet",
@@ -400,7 +526,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-end gap-3 mt-4">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)} className="hover:by-gray-400">
+            <Button variant="outline" onClick={() => setConfirmOpen(false)} className="hover:bg-gray-200 hover:text-black">
               Cancel
             </Button>
             <Button
@@ -498,40 +624,110 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                   User Input Fields
                 </h3>
                 <div className="grid md:grid-cols-3 gap-6">
-                  {[
-                    "processed_quantity",
-                    "used_weight",
-                    "number_of_sheets",
-                    "cut_length_per_sheet",
-                    "pierce_per_sheet",
-                    "processed_mins_per_sheet",
-                  ].map((key) => (
-                    <div key={key} className="flex flex-col space-y-1.5">
-                      <label
-                        htmlFor={key}
-                        className="text-sm font-medium text-gray-700"
-                      >
-                        {LABELS[key as keyof ProgramerFormData]}
-                      </label>
-                      <input
-                        type="text"
-                        name={key}
-                        id={key}
-                        value={formData[key as keyof ProgramerFormData]}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder={LABELS[key as keyof ProgramerFormData]}
-                        className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors[key]
-                          ? "border-red-500 focus:ring-red-400"
-                          : "border-gray-300 focus:ring-blue-500"
-                          }`}
-                      />
-                      {formErrors[key] && (
-                        <span className="text-red-500 text-xs">{formErrors[key]}</span>
-                      )}
-                    </div>
-                  ))}
+                  <>
+                    {/* ---------------- FIRST ROW ---------------- */}
+                    {["processed_quantity", "used_weight", "number_of_sheets"].map((key) => (
+                      <div key={key} className="flex flex-col space-y-1.5">
+                        <label
+                          htmlFor={key}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {LABELS[key as keyof ProgramerFormData]}
+                        </label>
+
+                        <input
+                          type="text"
+                          name={key}
+                          id={key}
+                          value={formData[key as keyof ProgramerFormData]}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          placeholder={LABELS[key as keyof ProgramerFormData]}
+                          className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors[key]
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-blue-500"
+                            }`}
+                        />
+
+                        {formErrors[key] && (
+                          <span className="text-red-500 text-xs">{formErrors[key]}</span>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* ---------------- SECOND ROW (MATCHING UI) ---------------- */}
+                    {Number(formData.balance_quantity) > 0 && (
+                      <>
+                        {/* Processed Width */}
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-sm font-medium text-gray-700">
+                            Processed Width
+                          </label>
+                          <input
+                            type="text"
+                            name="processed_width"
+                            value={formData.processed_width}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Enter Processed Width"
+                            className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+
+                        {/* Processed Length */}
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-sm font-medium text-gray-700">
+                            Processed Length
+                          </label>
+                          <input
+                            type="text"
+                            name="processed_length"
+                            value={formData.processed_length}
+                            onChange={handleChange}
+                            placeholder="Enter Processed Length"
+                            className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                          />
+                        </div>
+                      </>
+
+                    )}
+
+                    {/* ---------------- THIRD ROW ---------------- */}
+                    {[
+                      "cut_length_per_sheet",
+                      "pierce_per_sheet",
+                      "processed_mins_per_sheet",
+                    ].map((key) => (
+                      <div key={key} className="flex flex-col space-y-1.5">
+                        <label
+                          htmlFor={key}
+                          className="text-sm font-medium text-gray-700"
+                        >
+                          {LABELS[key as keyof ProgramerFormData]}
+                        </label>
+
+                        <input
+                          type="text"
+                          name={key}
+                          id={key}
+                          value={formData[key as keyof ProgramerFormData]}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          placeholder={LABELS[key as keyof ProgramerFormData]}
+                          className={`border rounded-lg px-3 py-2 focus:ring-2 focus:outline-none ${formErrors[key]
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-blue-500"
+                            }`}
+                        />
+
+                        {formErrors[key] && (
+                          <span className="text-red-500 text-xs">{formErrors[key]}</span>
+                        )}
+                      </div>
+                    ))}
+                  </>
                 </div>
+
               </section>
 
               {/* 🔹 Auto-Calculated Fields */}
@@ -543,43 +739,102 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                   </span>
                 </h3>
                 <div className="grid md:grid-cols-3 gap-6">
-                  {[
-                    "balance_quantity",
-                    "total_planned_hours",
-                    "total_meters",
-                    "total_piercing",
-                    "total_used_weight",
-                    "total_no_of_sheets",
-                  ].map((key) => (
-                    <div key={key} className="flex flex-col space-y-1.5">
-                      <label
-                        htmlFor={key}
-                        className="text-sm font-medium text-gray-700 flex items-center gap-2"
-                      >
-                        {LABELS[key as keyof ProgramerFormData]}
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          className="w-4 h-4 text-gray-400"
+                  <>
+                    {[
+                      "balance_quantity",
+                      "total_used_weight",
+                      "total_no_of_sheets",
+                    ].map((key) => (
+                      <div key={key} className="flex flex-col space-y-1.5">
+                        <label
+                          htmlFor={key}
+                          className="text-sm font-medium text-gray-700 flex items-center gap-2"
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v9a1 1 0 001 1h10a1 1 0 001-1v-9a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 6V6a2 2 0 114 0v2H8zm2 6a2 2 0 100-4 2 2 0 000 4z"
-                            clipRule="evenodd"
+                          {LABELS[key as keyof ProgramerFormData]}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-4 h-4 text-gray-400"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v9a1 1 0 001 1h10a1 1 0 001-1v-9a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 6V6a2 2 0 114 0v2H8zm2 6a2 2 0 100-4 2 2 0 000 4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </label>
+                        <input
+                          type="text"
+                          name={key}
+                          id={key}
+                          value={formData[key as keyof ProgramerFormData]}
+                          readOnly
+                          className="border border-gray-200 bg-gray-50 text-gray-600 rounded-lg px-3 py-2 cursor-not-allowed"
+                        />
+                      </div>
+                    ))}
+                    {/* ---------------- SECOND ROW (MATCHING UI) ---------------- */}
+                    {Number(formData.balance_quantity) > 0 && (
+                      <>
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-sm font-medium text-gray-700">Remaining Width</label>
+                          <input
+                            type="text"
+                            value={remainingMaterial.width}
+                            readOnly
+                            className="border bg-gray-50 border-gray-200 rounded-lg px-3 py-2 text-gray-600 cursor-not-allowed"
                           />
-                        </svg>
-                      </label>
-                      <input
-                        type="text"
-                        name={key}
-                        id={key}
-                        value={formData[key as keyof ProgramerFormData]}
-                        readOnly
-                        className="border border-gray-200 bg-gray-50 text-gray-600 rounded-lg px-3 py-2 cursor-not-allowed"
-                      />
-                    </div>
-                  ))}
+                        </div>
+
+                        {/* Remaining Length */}
+                        <div className="flex flex-col space-y-1.5">
+                          <label className="text-sm font-medium text-gray-700">Remaining Length</label>
+                          <input
+                            type="text"
+                            value={remainingMaterial.length}
+                            readOnly
+                            className="border bg-gray-50 border-gray-200 rounded-lg px-3 py-2 text-gray-600 cursor-not-allowed"
+                          />
+                        </div>
+                      </>
+
+                    )}
+                    {[
+                      "total_meters",
+                      "total_piercing",
+                      "total_planned_hours",
+                    ].map((key) => (
+                      <div key={key} className="flex flex-col space-y-1.5">
+                        <label
+                          htmlFor={key}
+                          className="text-sm font-medium text-gray-700 flex items-center gap-2"
+                        >
+                          {LABELS[key as keyof ProgramerFormData]}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-4 h-4 text-gray-400"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 2a4 4 0 00-4 4v2H5a1 1 0 00-1 1v9a1 1 0 001 1h10a1 1 0 001-1v-9a1 1 0 00-1-1h-1V6a4 4 0 00-4-4zm-2 6V6a2 2 0 114 0v2H8zm2 6a2 2 0 100-4 2 2 0 000 4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </label>
+                        <input
+                          type="text"
+                          name={key}
+                          id={key}
+                          value={formData[key as keyof ProgramerFormData]}
+                          readOnly
+                          className="border border-gray-200 bg-gray-50 text-gray-600 rounded-lg px-3 py-2 cursor-not-allowed"
+                        />
+                      </div>
+                    ))}
+                  </>
                 </div>
               </section>
             </div>
