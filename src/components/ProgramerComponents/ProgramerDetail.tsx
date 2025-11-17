@@ -98,7 +98,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
     <Card className="p-4 sm:p-6 md:p-8 mx-auto w-full">
 
       {/* --- Product Information Section --- */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
         <div className="space-y-4">
           {renderFieldCard("Serial Number", item.serial_number)}
           {renderFieldCard("Company Name", item.company_name)}
@@ -117,7 +117,62 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
           {renderFieldCard("Customer Document Number", item.customer_dc_no)}
           {renderFieldCard("Color", item.color || "-")}
         </div>
-      </div>
+      </div> */}
+      <section className="space-y-4">
+        <h3 className="text-xl font-semibold text-gray-700">
+          Inward Details
+        </h3>
+        <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-sm">
+          <table className="w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden">
+            <thead className="bg-gray-100 text-gray-700 font-semibold">
+              <tr>
+                <th className="border px-1 py-1">Serial No.</th>
+                <th className="border px-1 py-1">Date</th>
+                <th className="border px-1 py-1">Inward Slip No.</th>
+                <th className="border px-1 py-1">WO. No.</th>
+                <th className="border px-1 py-1">Company Name</th>
+                <th className="border px-1 py-1">Customer Name</th>
+                <th className="border px-1 py-1">Contact No.</th>
+
+
+
+
+                <th className="border px-1 py-1">Customer Dc No.</th>
+                <th className="border px-1 py-1">Color</th>
+                <th className="border px-1 py-1">Created By</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* {materials.map((mat, index) => ( */}
+              <>
+                <tr className="hover:bg-gray-50 transition-colors text-gray-800">
+                  <td className="border px-2 py-2 font-medium">
+                    {item.serial_number}
+                  </td>
+                  <td className="border px-2 py-2">{item.date ?? "-"}</td>
+                  <td className="border px-2 py-2">
+                    {item.inward_slip_number ?? "-"}
+                  </td>
+                  <td className="border px-2 py-2">{item.worker_no ?? "-"}</td>
+                  <td className="border px-2 py-2">{item.company_name || "-"}</td>
+                  <td className="border px-2 py-2">{item.customer_name ?? "-"}</td>
+                  <td className="border px-2 py-2">{item.contact_no || "-"}</td>
+
+
+
+                  <td className="border px-2 py-2">{item.customer_dc_no ?? "-"}</td>
+                  <td className="border px-2 py-2">
+                    {item.color ?? "-"}
+                  </td>
+                  <td className="border px-2 py-2">{item.created_by ?? "-"}</td>
+                </tr>
+              </>
+              {/* ))} */}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
 
       {/* --- Product Materials Section --- */}
       {materials.length > 0 && (
