@@ -155,12 +155,11 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
     field: keyof ProductType,
     value: string
   ) => {
-    const numericValue = value === "" ? "" : parseFloat(value);
 
     setFormData((prev) => {
       const updatedMaterials = [...(prev.materials || [])];
       let mat = { ...updatedMaterials[index] };
-      mat[field] = numericValue;
+      mat[field] = value;
 
       mat = recalcWeights(mat);
 
@@ -257,20 +256,22 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                         {/* Input */}
                         <input
                           type="text"
-                          inputMode="numeric"
+                          inputMode="decimal"
                           value={mat[field as keyof ProductType] || ""}
                           onChange={(e) => {
                             const val = e.target.value;
                             // Allow only digits (no e, no -, no +, no dots)
-                            if (!/^[0-9]*$/.test(val)) return;
+                            if (!/^\d*\.?\d*$/.test(val)) return;
                             // ✅ MAX LIMIT for width = 25
                             if (field === "thick" && Number(val) > 25) return;
                             handleDimensionChange(index, field as keyof ProductType, val);
                           }}
                           onPaste={(e) => {
                             const pasted = e.clipboardData.getData("text");
-                            if (!/^[0-9]*$/.test(pasted)) e.preventDefault();
-
+                            if (!/^\d*\.?\d*$/.test(pasted)) {
+                              e.preventDefault();
+                              return;
+                            }
                             // Prevent paste > 25 for width
                             if (field === "thick" && Number(pasted) > 25) {
                               e.preventDefault();
@@ -316,7 +317,7 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                     onChange={(e) => {
                       const val = e.target.value;
                       // Allow only digits (no e, no -, no +, no dots)
-                      if (!/^[0-9]*$/.test(val)) return;
+                      if (!/^\d*\.?\d*$/.test(val)) return;
                       handleInputChange(index, "quantity", val)
                     }
                     }
@@ -348,7 +349,7 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
                     onChange={(e) => {
                       const val = e.target.value;
                       // Allow only digits (no e, no -, no +, no dots)
-                      if (!/^[0-9]*$/.test(val)) return;
+                      if (!/^\d*\.?\d*$/.test(val)) return;
                       handleInputChange(index, "stock_due", e.target.value)
                     }
                     }

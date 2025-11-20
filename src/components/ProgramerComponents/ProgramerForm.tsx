@@ -31,6 +31,7 @@ interface ProgramerFormData {
   total_piercing: string;
   total_used_weight: string;
   total_no_of_sheets: string;
+  remarks?: string;
   created_by?: string;
 }
 
@@ -146,22 +147,24 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
   const recalculateTotals = (data: ProgramerFormData) => {
     const num = (v: string) => Number(v) || 0;
 
+    const round3 = (num: number) => Number(num.toFixed(3));
+
     const processedQty = num(data.processed_quantity);
     const minsPerSheet = num(data.processed_mins_per_sheet);
     const cutLength = num(data.cut_length_per_sheet);
 
     // Total minutes
-    const totalMinutes = processedQty * minsPerSheet;
+    const totalMinutes = Math.round(processedQty * minsPerSheet);
 
     // Convert minutes → HH:MM
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     const totalPlannedHours = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 
-    const totalMeters = processedQty < 1 ? cutLength : processedQty * cutLength;
-    const totalPiercing = processedQty * num(data.pierce_per_sheet);
-    const totalWeight = processedQty * num(data.used_weight);
-    const totalSheet = processedQty * num(data.number_of_sheets);
+    const totalMeters = round3(processedQty < 1 ? cutLength : processedQty * cutLength);
+    const totalPiercing = round3(processedQty * num(data.pierce_per_sheet));
+    const totalWeight = round3(processedQty * num(data.used_weight));
+    const totalSheet = round3(processedQty * num(data.number_of_sheets));
 
     return {
       total_piercing: totalPiercing.toString(),
@@ -306,6 +309,11 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       "processed_mins_per_sheet",
     ];
 
+    // Block decimal ONLY for minutes field
+    if (name === "processed_mins_per_sheet") {
+      if (!/^[0-9]*$/.test(value)) return;  // no decimals allowed
+    }
+
     if (numericFields.includes(name)) {
       if (!allowOnlyNumbers(value)) return; // ❌ block invalid
     }
@@ -338,7 +346,8 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       // 🔹 Auto-update balance
       if (name === "processed_quantity") {
         const processed = Number(value) || 0;
-        let balance = selectedMaterialQty - processed;
+        const round3 = (processed: number) => Number(processed.toFixed(3));
+        let balance = round3(selectedMaterialQty - processed);
 
         if (balance < 0) balance = 0; // prevent negative
 
@@ -371,7 +380,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       return updated;
     });
   };
-
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -572,8 +580,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                       .filter((mat) => mat.programer_status === "pending")
                       .map((mat) => (
                         <option key={mat.id} value={mat.id}>
-                          {mat.mat_type} ({mat.mat_grade}) - {mat.thick}mm × {mat.width} ×{" "}
-                          {mat.length}
+                          MT- {mat.mat_type} / G- {mat.mat_grade} / T- {mat.thick}mm / W- {mat.width} / L- {mat.length} / Qty- {mat.quantity}
                         </option>
                       ))}
                   </select>
@@ -616,16 +623,14 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
 
           {/* --- Step 2 --- */}
-          {currentStep === 2 && (
+          {/* {currentStep === 2 && (
             <div className="space-y-8 px-12">
-              {/* 🔹 User Input Fields */}
               <section>
                 <h3 className="text-xl font-semibold text-gray-800 mb-4">
                   User Input Fields
                 </h3>
                 <div className="grid md:grid-cols-3 gap-6">
                   <>
-                    {/* ---------------- FIRST ROW ---------------- */}
                     {["processed_quantity", "used_weight", "number_of_sheets"].map((key) => (
                       <div key={key} className="flex flex-col space-y-1.5">
                         <label
@@ -655,10 +660,9 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                       </div>
                     ))}
 
-                    {/* ---------------- SECOND ROW (MATCHING UI) ---------------- */}
+
                     {Number(formData.balance_quantity) > 0 && (
                       <>
-                        {/* Processed Width */}
                         <div className="flex flex-col space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">
                             Processed Width
@@ -674,7 +678,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                           />
                         </div>
 
-                        {/* Processed Length */}
                         <div className="flex flex-col space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">
                             Processed Length
@@ -692,7 +695,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
                     )}
 
-                    {/* ---------------- THIRD ROW ---------------- */}
                     {[
                       "cut_length_per_sheet",
                       "pierce_per_sheet",
@@ -730,7 +732,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
               </section>
 
-              {/* 🔹 Auto-Calculated Fields */}
               <section>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   Auto-Calculated Fields
@@ -774,7 +775,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                         />
                       </div>
                     ))}
-                    {/* ---------------- SECOND ROW (MATCHING UI) ---------------- */}
                     {Number(formData.balance_quantity) > 0 && (
                       <>
                         <div className="flex flex-col space-y-1.5">
@@ -787,7 +787,6 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                           />
                         </div>
 
-                        {/* Remaining Length */}
                         <div className="flex flex-col space-y-1.5">
                           <label className="text-sm font-medium text-gray-700">Remaining Length</label>
                           <input
@@ -835,6 +834,352 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
                       </div>
                     ))}
                   </>
+                </div>
+              </section>
+            </div>
+          )} */}
+
+          {currentStep === 2 && (
+            <div className="space-y-5 px-6">
+
+              {/* ================= USER INPUT FIELDS ================= */}
+              <section>
+
+                {/* === 3 COLUMN GRID === */}
+                <div className="grid grid-cols-3 gap-6">
+
+                  {/* ================== QUANTITY ================== */}
+                  <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 mb-1">Quantity</h4>
+
+                    <div className="w-full flex flex-col md:flex-row flex-wrap items-start gap-6">
+                      {["processed_quantity", "balance_quantity"].map((key) => (
+                        <div key={key} className="flex flex-col gap-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            {LABELS[key]}
+                          </label>
+                          <input
+                            type="text"
+                            name={key}
+                            value={formData[key]}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            readOnly={key === "balance_quantity"}
+                            className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${key === "balance_quantity"
+                              ? "bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed"
+                              : formErrors[key]
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-500"
+                              }`}
+                          />
+
+                          {formErrors[key] && (
+                            <span className="text-red-500 text-xs">{formErrors[key]}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ================== WEIGHT ================== */}
+                  <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 mb-1">Weight</h4>
+
+                    <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+                      {["used_weight", "total_used_weight"].map((key) => (
+                        <div key={key} className="flex flex-col gap-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            {LABELS[key]}
+                          </label>
+                          <input
+                            type="text"
+                            name={key}
+                            value={formData[key]}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            readOnly={key === "total_used_weight"}
+                            className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${key === "total_used_weight"
+                              ? "bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed"
+                              : formErrors[key]
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-500"
+                              }`}
+                          />
+
+                          {formErrors[key] && (
+                            <span className="text-red-500 text-xs">{formErrors[key]}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ================== SHEETS ================== */}
+                  <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 mb-1">Sheets</h4>
+
+                    <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+                      {["number_of_sheets", "total_no_of_sheets"].map((key) => (
+                        <div key={key} className="flex flex-col gap-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            {LABELS[key]}
+                          </label>
+                          <input
+                            type="text"
+                            name={key}
+                            value={formData[key]}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            readOnly={key === "total_no_of_sheets"}
+                            className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${key === "total_no_of_sheets"
+                              ? "bg-gray-100 border-gray-200 text-gray-600 cursor-not-allowed"
+                              : formErrors[key]
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-500"
+                              }`}
+                          />
+                          {formErrors[key] && (
+                            <span className="text-red-500 text-xs">this Field is required.</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ================== PROCESSED WIDTH + REMAIN WIDTH ================== */}
+                  {Number(formData.balance_quantity) > 0 && (
+                    <>
+                      <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                        <h4 className="text-md font-semibold text-gray-700 mb-1">Width</h4>
+
+                        <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+
+                          {/* Processed Width */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-gray-700">
+                              Processed Width
+                            </label>
+                            <input
+                              type="text"
+                              name="processed_width"
+                              value={formData.processed_width}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={`border rounded-lg px-3 py-1 max-w-[180px] ${formErrors.processed_width
+                                ? "border-red-400 focus:ring-red-400"
+                                : "border-gray-300"
+                                }`}
+                            />
+                            {formErrors.processed_width && (
+                              <span className="text-red-500 text-xs">{formErrors.processed_width}</span>
+                            )}
+                          </div>
+
+                          {/* Remaining Width */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-gray-700">
+                              Remaining Width
+                            </label>
+                            <input
+                              type="text"
+                              readOnly
+                              value={remainingMaterial.width}
+                              className="border bg-gray-100 text-gray-600 rounded-lg px-3 py-1 max-w-[180px] cursor-not-allowed"
+                            />
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* ================== PROCESSED LENGTH + REMAIN LENGTH ================== */}
+                      <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                        <h4 className="text-md font-semibold text-gray-700 mb-1">Length</h4>
+
+                        <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+
+                          {/* Processed Length */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-gray-700">
+                              Processed Length
+                            </label>
+                            <input
+                              type="text"
+                              name="processed_length"
+                              value={formData.processed_length}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${formErrors.processed_length
+                                ? "border-red-500 focus:ring-red-400"
+                                : "border-gray-300 focus:ring-blue-500"
+                                }`}
+                            />
+                            {formErrors.processed_length && (
+                              <span className="text-red-500 text-xs">{formErrors.processed_length}</span>
+                            )}
+                          </div>
+
+                          {/* Remaining Length */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-sm font-medium text-gray-700">
+                              Remaining Length
+                            </label>
+                            <input
+                              type="text"
+                              readOnly
+                              value={remainingMaterial.length}
+                              className="border bg-gray-100 text-gray-600 rounded-lg px-3 py-1 max-w-[180px] cursor-not-allowed"
+                            />
+                          </div>
+
+                        </div>
+                      </div>
+                    </>)}
+
+                </div>
+
+                {/* ================== LOWER 3 BOXES ================== */}
+                <div className="grid grid-cols-3 gap-6 mt-5">
+
+                  {/* ===== BOX 1 : CUT LENGTH + TOTAL METERS ===== */}
+                  <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 mb-1">Cut Length</h4>
+
+                    <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+
+                      {/* Cut Length */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          {LABELS.cut_length_per_sheet}
+                        </label>
+                        <input
+                          type="text"
+                          name="cut_length_per_sheet"
+                          value={formData.cut_length_per_sheet}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${formErrors.cut_length_per_sheet
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-blue-500"
+                            }`}
+                        />
+                        {formErrors.cut_length_per_sheet && (
+                          <span className="text-red-500 text-xs">{formErrors.cut_length_per_sheet}</span>
+                        )}
+                      </div>
+
+                      {/* Total Meters */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">Total Meters</label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={formData.total_meters}
+                          className="border bg-gray-100 text-gray-600 rounded-lg px-3 py-1 max-w-[180px] cursor-not-allowed"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* ===== BOX 2 : PIERCE + TOTAL PIERCING ===== */}
+                  <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 mb-1">Piercing</h4>
+
+                    <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+
+                      {/* Pierce */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          {LABELS.pierce_per_sheet}
+                        </label>
+                        <input
+                          type="text"
+                          name="pierce_per_sheet"
+                          value={formData.pierce_per_sheet}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${formErrors.pierce_per_sheet
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-blue-500"
+                            }`}
+                        />
+                        {formErrors.pierce_per_sheet && (
+                          <span className="text-red-500 text-xs">{formErrors.pierce_per_sheet}</span>
+                        )}
+                      </div>
+
+                      {/* Total Piercing */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          Total Piercing
+                        </label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={formData.total_piercing}
+                          className="border bg-gray-100 text-gray-600 rounded-lg px-3 py-1 max-w-[180px] cursor-not-allowed"
+                        />
+                      </div>
+
+                    </div>
+                  </div>
+
+                  {/* ===== BOX 3 : MINUTES + TOTAL HOURS ===== */}
+                  <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+                    <h4 className="text-md font-semibold text-gray-700 mb-1">Processing Time</h4>
+
+                    <div className="flex flex-col md:flex-row flex-wrap items-start gap-6">
+
+                      {/* Minutes */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">
+                          {LABELS.processed_mins_per_sheet}
+                        </label>
+                        <input
+                          type="text"
+                          name="processed_mins_per_sheet"
+                          value={formData.processed_mins_per_sheet}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          className={`border rounded-lg px-3 py-1 max-w-[180px] focus:ring-2 ${formErrors.processed_mins_per_sheet
+                            ? "border-red-500 focus:ring-red-400"
+                            : "border-gray-300 focus:ring-blue-500"
+                            }`}
+                        />
+                        {formErrors.processed_mins_per_sheet && (
+                          <span className="text-red-500 text-xs">This Field is Required</span>
+                        )}
+                      </div>
+
+                      {/* Total Hours */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-sm font-medium text-gray-700">Total Hours</label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={formData.total_planned_hours}
+                          className="border bg-gray-100 text-gray-600 rounded-lg px-3 py-1 max-w-[180px] cursor-not-allowed"
+                        />
+
+                      </div>
+
+                    </div>
+                  </div>
+
+                </div>
+
+                <div className="border rounded-xl p-4 bg-gray-50 space-y-4 mt-5">
+                  <h4 className="text-md font-semibold text-gray-700 mb-1">Remarks</h4>
+                    {/* Remarks */}
+                    <div className="flex flex-col gap-1">
+                      <input
+                        type="text"
+                        name="remarks"
+                        value={formData.remarks}
+                        onChange={handleChange}
+                        className={`border rounded-lg px-3 py-1 w-full`}
+                      />
+                    </div>
                 </div>
               </section>
             </div>

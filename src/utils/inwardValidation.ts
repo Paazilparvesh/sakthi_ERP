@@ -9,7 +9,6 @@ export const validateField = (
   switch (field) {
     case "company_name":
     case "customer_name":
-    case "worker_no":
       if (!strValue.trim()) return "This field is required.";
       break;
 

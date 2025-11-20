@@ -97,27 +97,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
   return (
     <Card className="p-4 sm:p-6 md:p-8 mx-auto w-full">
 
-      {/* --- Product Information Section --- */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-        <div className="space-y-4">
-          {renderFieldCard("Serial Number", item.serial_number)}
-          {renderFieldCard("Company Name", item.company_name)}
-          {renderFieldCard("Contact Number", item.contact_no)}
-          {renderFieldCard("Created By", item.created_by || "-")}
-        </div>
-
-        <div className="space-y-4">
-          {renderFieldCard("Date", item.date || "-")}
-          {renderFieldCard("Customer Name", item.customer_name)}
-          {renderFieldCard("Work Order Number", item.worker_no || "-")}
-        </div>
-
-        <div className="space-y-4">
-          {renderFieldCard("Inward Slip Number", item.inward_slip_number || "-")}
-          {renderFieldCard("Customer Document Number", item.customer_dc_no)}
-          {renderFieldCard("Color", item.color || "-")}
-        </div>
-      </div> */}
+      {/* Inward Details */}
       <section className="space-y-4">
         <h3 className="text-xl font-semibold text-gray-700">
           Inward Details
@@ -133,10 +113,6 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
                 <th className="border px-1 py-1">Company Name</th>
                 <th className="border px-1 py-1">Customer Name</th>
                 <th className="border px-1 py-1">Contact No.</th>
-
-
-
-
                 <th className="border px-1 py-1">Customer Dc No.</th>
                 <th className="border px-1 py-1">Color</th>
                 <th className="border px-1 py-1">Created By</th>
@@ -149,22 +125,19 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
                   <td className="border px-2 py-2 font-medium">
                     {item.serial_number}
                   </td>
-                  <td className="border px-2 py-2">{item.date ?? "-"}</td>
+                  <td className="border px-2 py-2">{item.date}</td>
                   <td className="border px-2 py-2">
-                    {item.inward_slip_number ?? "-"}
+                    {item.inward_slip_number}
                   </td>
-                  <td className="border px-2 py-2">{item.worker_no ?? "-"}</td>
-                  <td className="border px-2 py-2">{item.company_name || "-"}</td>
-                  <td className="border px-2 py-2">{item.customer_name ?? "-"}</td>
-                  <td className="border px-2 py-2">{item.contact_no || "-"}</td>
-
-
-
-                  <td className="border px-2 py-2">{item.customer_dc_no ?? "-"}</td>
+                  <td className="border px-2 py-2">{item.worker_no || "—"}</td>
+                  <td className="border px-2 py-2">{item.company_name}</td>
+                  <td className="border px-2 py-2">{item.customer_name}</td>
+                  <td className="border px-2 py-2">{item.contact_no}</td>
+                  <td className="border px-2 py-2">{item.customer_dc_no}</td>
                   <td className="border px-2 py-2">
-                    {item.color ?? "-"}
+                    {item.color}
                   </td>
-                  <td className="border px-2 py-2">{item.created_by ?? "-"}</td>
+                  <td className="border px-2 py-2">{item.created_by}</td>
                 </tr>
               </>
               {/* ))} */}
@@ -173,8 +146,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
         </div>
       </section>
 
-
-      {/* --- Product Materials Section --- */}
+      {/* Product Materials */}
       {materials.length > 0 && (
         <section className="mt-10 space-y-4">
           <h3 className="text-xl font-semibold text-gray-700">
@@ -247,8 +219,8 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
         </section>
       )}
 
-      {/* --- Separate Section for Programmer Details --- */}
-      {/* {materials[0].programer_status === "completed" && (
+      {/* Programmer Details */}
+      {materials[0].programer_status === "completed" && (
         <section className="mt-10">
           <Separator className="my-5" />
           <h3 className="text-2xl font-semibold text-gray-800 mb-6">
@@ -256,7 +228,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
           </h3>
 
           {selectedMaterialId && materialDataMap[selectedMaterialId] ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               {Object.entries(materialDataMap[selectedMaterialId]).map(
                 ([key, value]) => {
                   if (
@@ -284,67 +256,7 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
             </p>
           )}
         </section>
-      )} */}
-
-      {/* --- Programmer Details Section (Table Format — Matches Material Table) --- */}
-      {materials[0].programer_status === "completed" && (
-        <section className="mt-10">
-          <Separator className="my-5" />
-
-          <h3 className="text-2xl font-semibold text-gray-800 mb-6">
-            Programmer Details
-          </h3>
-
-          {selectedMaterialId && materialDataMap[selectedMaterialId] ? (
-            <div className="overflow-x-auto rounded-xl border border-gray-300 shadow-sm">
-              <table className="w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden">
-
-                {/* Header */}
-                <thead className="bg-gray-100 text-gray-700 font-semibold">
-                  <tr>
-                    <th className="border px-3 py-2 w-[50%]">Field</th>
-                    <th className="border px-3 py-2">Value</th>
-                  </tr>
-                </thead>
-
-                {/* Body */}
-                <tbody>
-                  {Object.entries(materialDataMap[selectedMaterialId]).map(
-                    ([key, value]) => {
-                      if (
-                        ["id", "product_details", "material_details"].includes(key)
-                      )
-                        return null;
-
-                      const label = key
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase());
-
-                      return (
-                        <tr key={key} className="hover:bg-gray-50 transition-colors text-gray-800">
-                          <td className="border px-3 py-2 font-medium">
-                            {label}
-                          </td>
-                          <td className="border px-3 py-2">
-                            {value !== "" && value !== null ? value.toString() : "—"}
-                          </td>
-                        </tr>
-                      );
-                    }
-                  )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-gray-500 italic text-center py-8">
-              {loadingID
-                ? "Fetching programmer details..."
-                : "Select a material row to view its programmer details."}
-            </p>
-          )}
-        </section>
       )}
-
     </Card>
   );
 };
