@@ -1,10 +1,13 @@
 import { useAuth } from '@/context/AuthContext';
+import { UserRole } from '@/types/user.type';
 import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute: React.FC<{ children: JSX.Element; roles?: string[] }> = ({
-  children,
-  roles,
-}) => {
+interface ProtectedRouteProps {
+  children: JSX.Element;
+  roles?: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -15,18 +18,21 @@ const ProtectedRoute: React.FC<{ children: JSX.Element; roles?: string[] }> = ({
     );
   }
 
+  // Not logged in → redirect to login
   if (!isAuthenticated || !user) {
     return <Navigate to='/login' replace />;
   }
 
+  // Admin bypass (admin can open all)
   if (user.isAdmin) {
     return children;
   }
   // Check role access
-  if (roles && !roles.some((r) => user?.roles.includes(r as any))) {
+  if (roles && !roles.some(role => user.roles.includes(role as UserRole))) {
     return <Navigate to='/unauthorized' replace />;
   }
 
+  // User allowed → show the requested page
   return children;
 };
 

@@ -21,7 +21,6 @@ const InwardTable: React.FC<InwardProps> = ({ formData, setFormData }) => {
     );
 
     setItems(res);
-    console.log("res  :", res)
   }, [API_URL])
 
   useEffect(() => {

@@ -74,9 +74,8 @@ const renderFieldCard = (
 
   return (
     <Card
-      className={`shadow-sm rounded-lg border ${
-        isStatus ? 'border-transparent' : 'border-gray-200'
-      }`}
+      className={`shadow-sm rounded-lg border ${isStatus ? 'border-transparent' : 'border-gray-200'
+        }`}
     >
       <CardContent className='p-4'>
         <span className='text-gray-500 font-medium text-sm'>{label}</span>
@@ -90,32 +89,32 @@ const renderFieldCard = (
   );
 };
 
-const InfoCard = ({
-  label,
-  value,
-}: {
-  label: string;
-  value?: string | number | Record<string, string>;
-}) => {
-  // 🧠 Handle nested objects gracefully
-  const formattedValue =
-    value === null || value === undefined
-      ? '-'
-      : typeof value === 'object'
-      ? value.username
-        ? `${value.username}${value.type ? ` (${value.type})` : ''}`
-        : JSON.stringify(value)
-      : value;
+// const InfoCard = ({
+//   label,
+//   value,
+// }: {
+//   label: string;
+//   value?: string | number | Record<string, string>;
+// }) => {
+//   // 🧠 Handle nested objects gracefully
+//   const formattedValue =
+//     value === null || value === undefined
+//       ? '-'
+//       : typeof value === 'object'
+//       ? value.username
+//         ? `${value.username}${value.type ? ` (${value.type})` : ''}`
+//         : JSON.stringify(value)
+//       : value;
 
-  return (
-    <div className='bg-gray-50 border rounded-lg p-3 shadow-sm'>
-      <p className='text-gray-500 text-sm font-medium'>{label}</p>
-      <p className='font-semibold text-gray-800 break-words'>
-        {formattedValue}
-      </p>
-    </div>
-  );
-};
+//   return (
+//     <div className='bg-gray-50 border rounded-lg p-3 shadow-sm'>
+//       <p className='text-gray-500 text-sm font-medium'>{label}</p>
+//       <p className='font-semibold text-gray-800 break-words'>
+//         {formattedValue}
+//       </p>
+//     </div>
+//   );
+// };
 
 /* ---------------------- Main Component ---------------------- */
 const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
@@ -233,7 +232,7 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
 
   /* ---------------------- JSX ---------------------- */
   return (
-    <Card className='shadow-lg rounded-3xl mx-auto w-full overflow-hidden p-10'>
+    <Card className='p-4 sm:p-6 md:p-8 mx-auto w-full'>
       {/* Product Info */}
       <section className='space-y-4'>
         <h3 className='text-xl font-semibold text-gray-700'>Inward Details</h3>
@@ -254,7 +253,6 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
               </tr>
             </thead>
             <tbody>
-              {/* {materials.map((mat, index) => ( */}
               <>
                 <tr className='hover:bg-gray-50 transition-colors text-gray-800'>
                   <td className='border px-2 py-2 font-medium'>
@@ -275,36 +273,33 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
                   <td className='border px-2 py-2'>{product.created_by}</td>
                 </tr>
               </>
-              {/* ))} */}
             </tbody>
           </table>
         </div>
       </section>
 
-      <Separator className='my-5' />
-
       {/* Materials Table */}
       {product.materials?.length > 0 && (
-        <section className='space-y-4 my-10'>
-          <h3 className='text-3xl font-semibold text-gray-700'>
+        <section className='space-y-4 mt-10'>
+          <h3 className='text-xl font-semibold text-gray-700'>
             Product Materials
           </h3>
           <div className='overflow-x-auto rounded-xl border border-gray-300 shadow-sm'>
-            <table className='w-full border-collapse text-center text-sm sm:text-base'>
+            <table className='w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden'>
               <thead className='bg-gray-100 text-gray-700 font-semibold w-full'>
                 <tr>
-                  <th className='border px-2 py-2'>S.No</th>
-                  <th className='border px-2 py-2'>Material Type</th>
-                  <th className='border px-2 py-2'>Grade</th>
-                  <th className='border px-2 py-2'>Thick (mm)</th>
-                  <th className='border px-2 py-2'>Width (mm)</th>
-                  <th className='border px-2 py-2'>Length (mm)</th>
-                  <th className='border px-2 py-2'>Density</th>
-                  <th className='border px-2 py-2'>Unit Weight (kg)</th>
-                  <th className='border px-2 py-2'>Quantity</th>
-                  <th className='border px-2 py-2'>Total Weight (kg)</th>
-                  <th className='border px-2 py-2'>Stock Due (Days)</th>
-                  <th className='border px-2 py-2'>Remarks</th>
+                  <th className='border px-1 py-1'>S.No</th>
+                  <th className='border px-1 py-1'>Material Type</th>
+                  <th className='border px-1 py-1'>Grade</th>
+                  <th className='border px-1 py-1'>Thick (mm)</th>
+                  <th className='border px-1 py-1'>Width (mm)</th>
+                  <th className='border px-1 py-1'>Length (mm)</th>
+                  <th className='border px-1 py-1'>Density</th>
+                  <th className='border px-1 py-1'>Unit Weight (kg)</th>
+                  <th className='border px-1 py-1'>Quantity</th>
+                  <th className='border px-1 py-1'>Total Weight (kg)</th>
+                  <th className='border px-1 py-1'>Stock Due (Days)</th>
+                  <th className='border px-1 py-1'>Remarks</th>
                   {product.materials.some(
                     (mat) => mat.programer_status === 'completed'
                   ) && <th className='border px-2 py-2'>Action</th>}
@@ -316,18 +311,18 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
                     key={mat.id || index}
                     className='hover:bg-gray-50 transition text-gray-800'
                   >
-                    <td className='border px-2 py-2'>{index + 1}</td>
+                    <td className='border px-2 py-2 font-medium'>{index + 1}</td>
                     <td className='border px-2 py-2'>{mat.mat_type}</td>
                     <td className='border px-2 py-2'>{mat.mat_grade}</td>
                     <td className='border px-2 py-2'>{mat.thick}</td>
                     <td className='border px-2 py-2'>{mat.width}</td>
                     <td className='border px-2 py-2'>{mat.length}</td>
                     <td className='border px-2 py-2'>{mat.density}</td>
-                    <td className='border px-2 py-2'>{mat.unit_weight}</td>
+                    <td className='border px-2 py-2'>{Number(mat.unit_weight).toFixed(2)}</td>
                     <td className='border px-2 py-2'>{mat.quantity}</td>
-                    <td className='border px-2 py-2'>{mat.total_weight}</td>
+                    <td className='border px-2 py-2'>{Number(mat.total_weight).toFixed(2)}</td>
                     <td className='border px-2 py-2'>{mat.stock_due}</td>
-                    <td className='border px-2 py-2'>{mat.remarks}</td>
+                    <td className='border px-2 py-2'>{mat.remarks || "--"}</td>
                     {mat.programer_status === 'completed' && mat.id && (
                       <td className='border px-2 py-2'>
                         <Button
@@ -338,8 +333,8 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
                           {loadingID === mat.id
                             ? 'Loading...'
                             : selectedMaterialId === mat.id
-                            ? 'Hide'
-                            : 'View'}
+                              ? 'Hide'
+                              : 'View'}
                         </Button>
                       </td>
                     )}
@@ -350,8 +345,6 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
           </div>
         </section>
       )}
-
-      <Separator className='my-5' />
 
       {/* Programmer Details */}
       <section className='mt-10'>
@@ -387,60 +380,67 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
       </section>
 
       {/* QA Section (filtered per material) */}
-      {/* {selectedMaterialId && selectedMaterialQaDetails.length > 0 ? (
+      {selectedMaterialId && selectedMaterialQaDetails.length > 0 ? (
         <>
-          <Separator className='my-10' />
-          <h3 className='text-xl font-semibold text-gray-700 mb-6'>
-            QA Details (Material #{selectedMaterialId})
-          </h3>
-          <div className='space-y-6'>
-            {selectedMaterialQaDetails.map((qa) => (
-              <Card key={qa.id} className='border p-4 rounded-xl'>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                  <InfoCard label='Processed Date' value={qa.processed_date} />
-                  <InfoCard label='Shift' value={qa.shift} />
-                  <InfoCard label='No. of Sheets' value={qa.no_of_sheets} />
-                  <InfoCard
-                    label='Cycle Time per Sheet'
-                    value={qa.cycletime_per_sheet}
-                  />
-                  <InfoCard
-                    label='Total Cycle Time'
-                    value={qa.total_cycle_time}
-                  />
+          <section className="mt-10">
+            <h3 className='text-xl font-semibold text-gray-700 mb-6'>
+              QA Details (Material #{selectedMaterialId})
+            </h3>
+            <div className='overflow-x-auto rounded-xl border border-gray-300 shadow-sm'>
+              <table className='w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden'>
+                <thead className='bg-gray-100 text-gray-700 font-semibold'>
+                  <tr>
+                    <th className='border px-2 py-1'>Processed Date</th>
+                    <th className='border px-2 py-1'>Shift</th>
+                    <th className='border px-2 py-1'>No. of Sheets</th>
+                    <th className='border px-2 py-1'>Cycle Time/Sheet</th>
+                    <th className='border px-2 py-1'>Total Cycle Time</th>
+                    <th className='border px-2 py-1'>Operator Name</th>
+                    <th className='border px-2 py-1'>Created By</th>
+                    <th className='border px-2 py-1'>Machines Used / Time</th>
+                  </tr>
+                </thead>
 
-                  <InfoCard label='Operator Name' value={qa.operator_name} />
-                  <InfoCard label='Created By' value={qa.created_by} />
-                
-                  <div className='col-span-1 md:col-span-2 lg:col-span-3'>
-                    <h4 className='text-sm font-semibold text-gray-600 mb-2'>
-                      Machines Used
-                    </h4>
+                <tbody>
+                  {selectedMaterialQaDetails.map((qa) => (
+                    <tr
+                      key={qa.id}
+                      className='hover:bg-gray-50 transition-colors text-gray-800'
+                    >
+                      <td className='border px-2 py-2'>{qa.processed_date}</td>
+                      <td className='border px-2 py-2'>{qa.shift}</td>
+                      <td className='border px-2 py-2'>{qa.no_of_sheets}</td>
+                      <td className='border px-2 py-2'>{qa.cycletime_per_sheet}</td>
+                      <td className='border px-2 py-2'>{qa.total_cycle_time}</td>
+                      <td className='border px-2 py-2'>{qa.operator_name}</td>
+                      <td className='border px-2 py-2'>{qa.created_by}</td>
 
-                    {qa.machines_used && qa.machines_used.length > 0 ? (
-                      <div className='space-x-4 flex justify-start items-center'>
-                        {qa.machines_used.map((m, idx) => (
-                          <div
-                            key={idx}
-                            className='w-[20%] flex justify-between bg-gray-100 p-3 rounded-lg text-sm'
-                          >
-                            <span className='font-medium text-gray-700'>
-                              {m.machine}
-                            </span>
-                            <span className='text-gray-600'>{m.time} Mins</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className='text-gray-500 italic text-sm'>
-                        No machines recorded
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                      {/* Machines used */}
+                      <td className='border px-2 py-2'>
+                        {qa.machines_used?.length > 0 ? (
+                          <ul className='space-y-1 text-left'>
+                            {qa.machines_used.map((m, idx) => (
+                              <li
+                                key={idx}
+                                className='flex justify-between bg-gray-100 px-2 py-1 rounded'
+                              >
+                                <span className='font-medium'>{m.machine}</span>
+                                <span>{m.time} Mins</span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className='italic text-gray-500'>
+                            No machines
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </>
       ) : (
         selectedMaterialId && (
@@ -448,85 +448,10 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
             No QA details found for this material.
           </p>
         )
-      )} */}
-
-      {/* QA Section (filtered per material) */}
-{selectedMaterialId && selectedMaterialQaDetails.length > 0 ? (
-  <>
-    <Separator className='my-10' />
-    <h3 className='text-xl font-semibold text-gray-700 mb-6'>
-      QA Details (Material #{selectedMaterialId})
-    </h3>
-
-    <Card className='shadow-lg rounded-3xl mx-auto w-full overflow-hidden p-10'>
-      <section className='space-y-4'>
-        <div className='overflow-x-auto rounded-xl border border-gray-300 shadow-sm'>
-          <table className='w-full border-collapse text-center text-sm sm:text-base rounded-xl overflow-hidden'>
-            <thead className='bg-gray-100 text-gray-700 font-semibold'>
-              <tr>
-                <th className='border px-2 py-2'>Processed Date</th>
-                <th className='border px-2 py-2'>Shift</th>
-                <th className='border px-2 py-2'>No. of Sheets</th>
-                <th className='border px-2 py-2'>Cycle Time/Sheet</th>
-                <th className='border px-2 py-2'>Total Cycle Time</th>
-                <th className='border px-2 py-2'>Operator Name</th>
-                <th className='border px-2 py-2'>Created By</th>
-                <th className='border px-2 py-2'>Machines Used</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {selectedMaterialQaDetails.map((qa) => (
-                <tr
-                  key={qa.id}
-                  className='hover:bg-gray-50 transition-colors text-gray-800'
-                >
-                  <td className='border px-2 py-2'>{qa.processed_date}</td>
-                  <td className='border px-2 py-2'>{qa.shift}</td>
-                  <td className='border px-2 py-2'>{qa.no_of_sheets}</td>
-                  <td className='border px-2 py-2'>{qa.cycletime_per_sheet}</td>
-                  <td className='border px-2 py-2'>{qa.total_cycle_time}</td>
-                  <td className='border px-2 py-2'>{qa.operator_name}</td>
-                  <td className='border px-2 py-2'>{qa.created_by}</td>
-
-                  {/* Machines used */}
-                  <td className='border px-2 py-2'>
-                    {qa.machines_used?.length > 0 ? (
-                      <ul className='space-y-1 text-left'>
-                        {qa.machines_used.map((m, idx) => (
-                          <li
-                            key={idx}
-                            className='flex justify-between bg-gray-100 px-2 py-1 rounded'
-                          >
-                            <span className='font-medium'>{m.machine}</span>
-                            <span>{m.time} Mins</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className='italic text-gray-500'>
-                        No machines
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </Card>
-  </>
-) : (
-  selectedMaterialId && (
-    <p className='text-gray-500 italic text-center mt-6'>
-      No QA details found for this material.
-    </p>
-  )
-)}
+      )}
 
 
-      {selectedMaterialId && selectedMaterialAccDetails.length > 0 ? (
+      {/* {selectedMaterialId && selectedMaterialAccDetails.length > 0 ? (
         <>
           <Separator className='my-10' />
           <h3 className='text-xl font-semibold text-gray-700 mb-6'>
@@ -551,7 +476,48 @@ const OutwardDetail: React.FC<OutwardDetailProps> = ({ product }) => {
             No Accounts details found for this material.
           </p>
         )
+      )} */}
+
+      {selectedMaterialId && selectedMaterialAccDetails.length > 0 ? (
+        <>
+          <Separator className="my-10" />
+
+          <h3 className="text-xl font-semibold text-gray-700 mb-6">
+            Account Details
+          </h3>
+
+          <div className="overflow-x-auto rounded-xl border">
+            <table className="min-w-full border-collapse text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-left text-gray-700">
+                  <th className="px-4 py-3 border">Invoice No</th>
+                  <th className="px-4 py-3 border">Status</th>
+                  <th className="px-4 py-3 border">Remarks</th>
+                  <th className="px-4 py-3 border">Created By</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {selectedMaterialAccDetails.map((acc) => (
+                  <tr key={acc.acc_detail_id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 border">{acc.invoice_no}</td>
+                    <td className="px-4 py-3 border">{acc.status}</td>
+                    <td className="px-4 py-3 border">{acc.remarks}</td>
+                    <td className="px-4 py-3 border">{acc.created_by}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      ) : (
+        selectedMaterialId && (
+          <p className="text-gray-500 italic text-center mt-6">
+            No Account details found for this material.
+          </p>
+        )
       )}
+
     </Card>
   );
 };

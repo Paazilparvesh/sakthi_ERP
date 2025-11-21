@@ -11,6 +11,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  Outlet,
 } from 'react-router-dom';
 
 // Auth
@@ -29,14 +30,15 @@ import LoginRedirect from './Routes/LoginRedirect';
 import QADashboard from './pages/Dashboard_Page/QADashBoard';
 import AccountsDashboard from './pages/Dashboard_Page/AccountsDashBoard';
 
+import Unauthorized from './pages/Normal_Page/Unauthorized';
+
+
+interface ProtectedLayoutProps {
+  roles?: string[];
+}
+
 
 const queryClient = new QueryClient();
-
-const Unauthorized = () => (
-  <div className='h-screen flex items-center justify-center text-xl font-bold text-red-600'>
-    Unauthorized — You do not have permission to access this page.
-  </div>
-);
 
 const LayoutWithConditionalHeader = ({ children }) => {
   const location = useLocation();
@@ -47,6 +49,14 @@ const LayoutWithConditionalHeader = ({ children }) => {
       {!hideHeader && <Header />}
       {children}
     </>
+  );
+};
+
+const ProtectedLayout: React.FC<ProtectedLayoutProps> = ({ roles }) => {
+  return (
+    <ProtectedRoute roles={roles}>
+      <Outlet />
+    </ProtectedRoute>
   );
 };
 
@@ -61,72 +71,32 @@ const App = () => (
           <LayoutWithConditionalHeader>
             <Routes>
               <Route path='/' element={<Navigate to='/login' replace />} />
-              {/* <Route path='/login' element={<Login />} /> */}
-              <Route
-                path='/login'
-                element={
-                  <LoginRedirect>
-                    <Login />
-                  </LoginRedirect>
-                }
-              />
+              <Route path='/login' element={<LoginRedirect><Login /></LoginRedirect>} />
 
-              <Route
-                path='/dashboard'
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path='/inward_dashboard'
-                element={
-                  <ProtectedRoute roles={['inward']}>
-                    <InwardDashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Authenticated group */}
+              <Route element={<ProtectedLayout />}>
+                <Route path="/dashboard" element={<Dashboard />} />
 
-              <Route
-                path='/qa_dashboard'
-                element={
-                  <ProtectedRoute roles={['qa']}>
-                    {/* <OutwardDashboard role='qa' /> */}
-                    <QADashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route element={<ProtectedLayout roles={["inward"]} />}>
+                  <Route path="/inward_dashboard" element={<InwardDashboard />} />
+                </Route>
 
-              
+                <Route element={<ProtectedLayout roles={["qa"]} />}>
+                  <Route path="/qa_dashboard" element={<QADashboard />} />
+                </Route>
 
-              <Route
-                path='/accounts_dashboard'
-                element={
-                  <ProtectedRoute roles={['accounts']}>
-                    {/* <OutwardDashboard role='accounts' /> */}
-                    <AccountsDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route element={<ProtectedLayout roles={["accounts"]} />}>
+                  <Route path="/accounts_dashboard" element={<AccountsDashboard />} />
+                </Route>
 
-              <Route
-                path='/programer_dashboard'
-                element={
-                  <ProtectedRoute roles={['programer']}>
-                    <ProgramerDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route element={<ProtectedLayout roles={["programer"]} />}>
+                  <Route path="/programer_dashboard" element={<ProgramerDashboard />} />
+                </Route>
 
-              <Route
-                path='/admin_dashboard'
-                element={
-                  <ProtectedRoute roles={['admin']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route element={<ProtectedLayout roles={["admin"]} />}>
+                  <Route path="/admin_dashboard" element={<AdminDashboard />} />
+                </Route>
+              </Route>
 
               <Route path='/unauthorized' element={<Unauthorized />} />
               <Route path='*' element={<NotFound />} />

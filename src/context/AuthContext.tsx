@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const loggedUser: User = {
         username: data.username,
         roles: data.roles,
-        isAdmin: data.isAdmin, 
+        isAdmin: data.isAdmin,
       };
 
       localStorage.setItem('user', JSON.stringify(loggedUser));
@@ -81,16 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-  value={{
-    user,
-    login,
-    logout,
-    isAuthenticated: !isLoading && !!user, // FIXED
-    isLoading,
-  }}
->
-  {children}
-</AuthContext.Provider>
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated: !isLoading && !!user, // FIXED
+        isLoading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
 
   );
 };

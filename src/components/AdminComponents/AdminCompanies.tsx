@@ -412,7 +412,7 @@ const AdminCompanies: React.FC = () => {
                         name="company_name"
                         value={formData.company_name}
                         onChange={handleChange}
-                        pattern="^[A-Za-z0-9 _\\-]{2,40}$"
+                        pattern="^[A-Za-z0-9 _\-]{2,40}$"
                         required
                       />
                     </div>
@@ -651,7 +651,7 @@ const AdminCompanies: React.FC = () => {
                   name="company_name"
                   value={editForm.company_name || ""}
                   onChange={handleEditChange}
-                  pattern="^[A-Za-z0-9 _\\-]{2,40}$"
+                  pattern="^[A-Za-z0-9 _\-]{2,40}$"
                   title="Only letters, numbers, spaces, hyphens allowed. 2–40 characters."
                   className="mt-1"
                 />
@@ -664,7 +664,7 @@ const AdminCompanies: React.FC = () => {
                   name="customer_name"
                   value={editForm.customer_name || ""}
                   onChange={handleEditChange}
-                  pattern="^[A-Za-z0-9 _\\-]{2,40}$"
+                  pattern="^[A-Za-z0-9 _\-]{2,40}$"
                   title="Only letters, numbers, spaces, hyphens allowed. 2–40 characters."
                   className="mt-1"
                 />
@@ -691,7 +691,7 @@ const AdminCompanies: React.FC = () => {
                   name="customer_dc_no"
                   value={editForm.customer_dc_no || ""}
                   onChange={handleEditChange}
-                  pattern="^[A-Za-z0-9 _\\-]{1,30}$"
+                  pattern="^[A-Za-z0-9 _\-]{1,30}$"
 
                   title="Only letters, numbers, spaces, hyphens allowed."
                   className="mt-1"

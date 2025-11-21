@@ -284,33 +284,6 @@ const AdminUsersAdvanced: React.FC = () => {
   return (
     <div className="space-y-6">
 
-      {/* Role Count Cards */}
-      {roleCount && (
-        <div className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { title: "Inward", value: roleCount.count_inward, color: "blue" },
-              { title: "QA", value: roleCount.count_QA, color: "purple" },
-              { title: "Programer", value: roleCount.count_programer, color: "green" },
-              { title: "Accountant", value: roleCount.count_accountent, color: "orange" },
-              { title: "Admin", value: roleCount.count_admin, color: "red" },
-              { title: "Total", value: roleCount.total_users, color: "white" },
-            ].map(({ title, value, color }) => (
-              <Card key={title} className={`bg-${color}-100 border border-${color}-200`}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">{title} Users</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className={`text-2xl font-bold text-${color}-700`}>
-                    {value}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ---------------- SEARCH / FILTER / SORT ---------------- */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3">

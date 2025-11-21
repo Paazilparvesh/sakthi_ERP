@@ -71,7 +71,6 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
 
       if (Array.isArray(data) && data.length > 0) {
         const matched = data[0]; // Backend already filtered, so take first result
-        // console.log("materoial : ", matched)
         setMaterialDataMap((prev) => ({ ...prev, [materialId]: matched }));
         setSelectedMaterialId(materialId);
       } else {
@@ -119,7 +118,6 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
               </tr>
             </thead>
             <tbody>
-              {/* {materials.map((mat, index) => ( */}
               <>
                 <tr className="hover:bg-gray-50 transition-colors text-gray-800">
                   <td className="border px-2 py-2 font-medium">
@@ -140,7 +138,6 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
                   <td className="border px-2 py-2">{item.created_by}</td>
                 </tr>
               </>
-              {/* ))} */}
             </tbody>
           </table>
         </div>
@@ -187,11 +184,13 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
                       <td className="border px-2 py-2">{mat.length ?? "-"}</td>
                       <td className="border px-2 py-2">{mat.density ?? "-"}</td>
                       <td className="border px-2 py-2">
-                        {mat.unit_weight ?? "-"}
+                        {/* {mat.unit_weight ?? "-"} */}
+                        {Number(mat.unit_weight).toFixed(2)}
                       </td>
                       <td className="border px-2 py-2">{mat.quantity ?? "-"}</td>
                       <td className="border px-2 py-2">
-                        {mat.total_weight ?? "-"}
+                        {/* {mat.total_weight ?? "-"} */}
+                        {Number(mat.total_weight).toFixed(2)}
                       </td>
                       <td className="border px-2 py-2">{mat.stock_due ?? "-"}</td>
                       <td className="border px-2 py-2">{mat.remarks || "—"}</td>
@@ -222,13 +221,12 @@ const ProgramerDetail: React.FC<ProgramerDetailProps> = ({ item }) => {
       {/* Programmer Details */}
       {materials[0].programer_status === "completed" && (
         <section className="mt-10">
-          <Separator className="my-5" />
           <h3 className="text-2xl font-semibold text-gray-800 mb-6">
             Programmer Details
           </h3>
 
           {selectedMaterialId && materialDataMap[selectedMaterialId] ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {Object.entries(materialDataMap[selectedMaterialId]).map(
                 ([key, value]) => {
                   if (

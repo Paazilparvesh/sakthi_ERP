@@ -5,13 +5,14 @@ import OutwardDetail from '@/components/OutwardComponents/OutwardDetail';
 import QAForm from '@/components/QAComponents/QAForm';
 import { ProductType } from '@/types/inward.type';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from "@/components/ui/card";
 
 const getStatusColor = (status: string): string =>
   status?.toLowerCase() === 'completed'
     ? 'bg-green-100 text-green-800'
     : status?.toLowerCase() === 'pending'
-    ? 'bg-yellow-100 text-yellow-800'
-    : 'bg-gray-300 text-gray-800';
+      ? 'bg-yellow-100 text-yellow-800'
+      : 'bg-gray-300 text-gray-800';
 
 const QADashboard: React.FC = () => {
   const { toast } = useToast();
@@ -35,7 +36,8 @@ const QADashboard: React.FC = () => {
   const stored = localStorage.getItem('user');
   const user_roles = stored ? JSON.parse(stored).roles || [] : [];
 
-  // Fetch data
+  const safeArray = (data: any) => (Array.isArray(data) ? data : []);
+
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
@@ -45,47 +47,55 @@ const QADashboard: React.FC = () => {
         fetch(`${BASE_URL}/api/get_programer_Details/`),
       ]);
 
-      const productData = await productRes.json();
+      // If API returns 404 or error JSON, parse safely
+      let productData = [];
+      let programData = [];
 
-      // const programData = await programRes.json();
-      const programData = await programRes.json();
-
-      // Validate API response
-      if (
-        !programData ||
-        (Array.isArray(programData) && programData.length === 0)
-      ) {
-        toast({
-          title: 'No Program Data Found',
-          description: 'The server returned no records for programmer details.',
-        });
-
-        setProgram([]); // prevent errors
-      } else {
-        // Safe assign only if it's an array
-        setProgram(Array.isArray(programData) ? programData : []);
+      try {
+        productData = await productRes.json();
+      } catch {
+        productData = [];
       }
 
-      // Ensure it's always an array
+      try {
+        programData = await programRes.json();
+      } catch {
+        programData = [];
+      }
 
-      setProducts(productData);
+      // Normalize to arrays
+      setProducts(safeArray(productData));
+      setProgram(safeArray(programData));
 
-      //   setProgram(Array.isArray(programData) ? programData : []);
-      //   setProgram(programData);
+      if (!Array.isArray(productData)) {
+        toast({
+          title: "Products Not Found",
+          description: "Server returned invalid or empty response.",
+          variant: "destructive",
+        });
+      }
+
+      if (!Array.isArray(programData)) {
+        toast({
+          title: "Program Details Not Found",
+          description: "Server returned invalid or empty response.",
+        });
+      }
     } catch (error) {
       toast({
-        variant: 'destructive',
-        title: 'Fetch Error',
-        description: 'Failed to load product data',
+        variant: "destructive",
+        title: "Fetch Error",
+        description: "Failed to load dashboard data",
       });
     } finally {
       setLoading(false);
     }
   }, [BASE_URL, toast]);
 
+
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
 
   const programMaterialMap = useMemo(() => {
@@ -106,14 +116,14 @@ const QADashboard: React.FC = () => {
 
       const matchStatus =
         statusFilter === 'all' ||
-        item.outward_status?.toLowerCase() === statusFilter.toLowerCase();
+        item.qa_status?.toLowerCase() === statusFilter.toLowerCase();
 
       return matchSearch && matchStatus;
     })
-    .sort((a, b) => b.id - a.id);
+      .sort((a, b) => b.id - a.id);
   }, [products, searchQuery, statusFilter]);
 
-    const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * rowsPerPage;
@@ -146,124 +156,155 @@ const QADashboard: React.FC = () => {
 
   const canProceedQA =
     user_roles.includes('qa') &&
-    currentProduct?.outward_status?.toLowerCase() === 'pending' &&
+    // currentProduct?.outward_status?.toLowerCase() === 'pending' &&
+    // currentProduct?.qa_status?.toLowerCase() === "completed" &&
     hasPendingProgrammedMaterial;
+
+  const headerTitle = React.useMemo(() => {
+    switch (view) {
+      case "list":
+        return "Qa Dashboard";
+      case "detail":
+        return "Qa Details";
+      default:
+        return "Qa Dashboard";
+    }
+  }, [view]);
 
   return (
     <div className='p-12'>
-      <div className='mx-auto'>
-        {/* HEADER */}
-        <div className='flex justify-between items-center mb-6'>
-          <h1 className='text-3xl font-bold'>QA Dashboard</h1>
+      <div className='max-w-8xl mx-auto'>
+        <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-800">
+            {headerTitle}
+          </h1>
+          {/* HEADER */}
+          <div className="flex flex-col sm:flex-row items-center gap-4">
 
-          {view === 'list' && (
-            <div className='flex gap-4'>
-              <input
-                type='text'
-                placeholder='Search by company, customer or serial...'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className='border px-4 py-3 rounded-full w-full sm:w-72 text-sm outline-none focus:ring-2 focus:ring-blue-600'
-              />
+            {view === 'list' && (
+              <>
+                <input
+                  type='text'
+                  placeholder='Search by company, customer or serial...'
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className='border px-4 py-3 rounded-full w-full sm:w-72 text-sm outline-none focus:ring-2 focus:ring-blue-600'
+                />
 
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className='border px-4 py-2 rounded-lg'
-              >
-                <option value='all'>All</option>
-                <option value='pending'>Pending</option>
-                <option value='completed'>Completed</option>
-              </select>
-            </div>
-          )}
-
-          {view === 'detail' && (
-            <div className='flex gap-4'>
-              <Button
-                onClick={() => setView('list')}
-                className='bg-gray-200 hover:bg-gray-300'
-              >
-                Back
-              </Button>
-
-              {canProceedQA && (
-                <Button
-                  onClick={() => setView('qaForm')}
-                  className='bg-blue-700 text-white'
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className='border px-4 py-2 rounded-lg'
                 >
-                  Proceed to QA
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
+                  <option value='all'>All</option>
+                  <option value='pending'>Pending</option>
+                  <option value='completed'>Completed</option>
+                </select>
+              </>
+            )}
 
-        {/* LIST */}
-        {view === 'list' && (
-            <>
-          <OutwardList
-            product={paginatedData}
-            onView={(p) => {
-              setSelectedProduct(p);
-              setView('detail');
-            }}
-            getStatusColor={getStatusColor}
-            role='qa'
-          />
-                      {/* Pagination Buttons */}
-            {totalPages > 1 && (
-              <div className="flex justify-end items-center gap-3 mt-6 text-sm">
-
+            {view === 'detail' && (
+              <div className='flex gap-4'>
                 <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => prev - 1)}
-                  className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                  onClick={() => setView('list')}
+                  className='px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm'
                 >
-                  Prev
+                  Back
                 </button>
 
-                <span className="font-medium text-slate-700">
-                  Page {currentPage} / {totalPages}
-                </span>
-
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
-                >
-                  Next
-                </button>
-
+                {canProceedQA && (
+                  <Button
+                    onClick={() => setView('qaForm')}
+                    className='bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700'
+                  >
+                    Proceed to QA
+                  </Button>
+                )}
               </div>
             )}
-          </>
-        )}
+          </div>
+        </div>
 
-        {/* DETAIL */}
-        {view === 'detail' && currentProduct && (
-          <OutwardDetail
-            product={currentProduct}
-            program={filteredProgram}
-            getStatusColor={getStatusColor}
-          />
-        )}
+        <Card className="border-none shadow-none bg-transparent">
+          <CardContent className="p-0">
+            {/* LIST */}
+            {view === 'list' && (
+              <>
+                {paginatedData.length === 0 ? (
+                  <div className="flex justify-center items-center py-20">
+                    <p className="text-lg font-medium text-slate-600">
+                      No product found.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <OutwardList
+                      product={paginatedData}
+                      onView={(p) => {
+                        setSelectedProduct(p);
+                        setView('detail');
+                      }}
+                      getStatusColor={getStatusColor}
+                      role='qa'
+                    />
+                    {/* Pagination Buttons */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-end items-center gap-3 mt-6 text-sm">
 
-        {/* QA FORM */}
-        {view === 'qaForm' && currentProduct && (
-          <QAForm
-            productId={currentProduct.id}
-            companyName={currentProduct.company_name}
-            materials={currentProduct.materials.filter(
-              (m: any) =>
-                programMaterialMap[m.id] &&
-                String(m.qa_status).toLowerCase() === 'pending'
+                        <button
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(prev => prev - 1)}
+                          className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                        >
+                          Prev
+                        </button>
+
+                        <span className="font-medium text-slate-700">
+                          Page {currentPage} / {totalPages}
+                        </span>
+
+                        <button
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage(prev => prev + 1)}
+                          className="px-4 py-1 bg-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-300"
+                        >
+                          Next
+                        </button>
+
+                      </div>
+                    )}
+                  </>
+                )}
+              </>
             )}
-            program={filteredProgram}
-            onBack={() => setView('detail')}
-            onSubmitSuccess={fetchProducts}
-          />
-        )}
+
+            {/* DETAIL */}
+            {view === 'detail' && currentProduct && (
+              <OutwardDetail
+                product={currentProduct}
+                program={filteredProgram}
+                getStatusColor={getStatusColor}
+              />
+            )}
+
+            {/* QA FORM */}
+            {view === 'qaForm' && currentProduct && (
+              <QAForm
+                productId={currentProduct.id}
+                companyName={currentProduct.company_name}
+                materials={currentProduct.materials.filter(
+                  (m: any) =>
+                    programMaterialMap[m.id] &&
+                    String(m.qa_status).toLowerCase() === 'pending'
+                )}
+                program={filteredProgram}
+                onBack={() => setView('detail')}
+                onSubmitSuccess={fetchProducts}
+              />
+            )}
+
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

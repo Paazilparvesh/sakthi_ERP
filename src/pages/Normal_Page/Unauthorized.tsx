@@ -28,7 +28,7 @@ const Unauthorized = () => {
         </h1>
 
         <p className="text-gray-600 mb-6 leading-relaxed">
-          You don’t have permission to view this page.  
+          You don’t have permission to view this page.
           Please contact an administrator if you believe this is an error.
         </p>
 

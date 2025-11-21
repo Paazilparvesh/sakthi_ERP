@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { ProductType } from '@/types/inward.type';
 import { useLocation } from 'react-router-dom';
 
+import { Eye } from "lucide-react";
+
 interface ProductListProps {
   product: ProductType[];
   onView: (p: ProductType) => void;
@@ -44,38 +46,37 @@ export const OutwardList: React.FC<ProductListProps> = ({
           {product.map((p, i) => (
             <tr
               key={i}
-              className='border hover:bg-slate-50 even:bg-gray-50 odd:bg-white transition'
+              className='hover:bg-slate-50 even:bg-gray-50 odd:bg-white transition-all border text-center text-sm'
             >
               <td className='px-4 py-1 border text-center'>
                 {p.serial_number}
               </td>
-              <td className='px-4 py-1 border'>{p.company_name}</td>
-              <td className='px-4 py-1 border'>{p.customer_name}</td>
-              <td className='px-4 py-1 border text-center'>{p.date}</td>
-              <td className='px-4 py-1 border text-center'>{p.color}</td>
-              <td className='px-4 py-1 border text-center'>
+              <td className='px-4 py-2 border'>{p.company_name}</td>
+              <td className='px-4 py-2 border'>{p.customer_name}</td>
+              <td className='px-4 py-2 border text-center'>{p.date}</td>
+              <td className='px-4 py-2 border text-center'>{p.color}</td>
+              <td className='px-4 py-2 border text-center'>
                 {p.created_by || 'Unknown'}
               </td>
-              <td className='px-4 py-1 border text-center'>
+              <td className='px-4 py-2 border text-center'>
                 <Badge className={getStatusColor(p.qa_status)}>
                   {p.qa_status}
                 </Badge>
               </td>
               {isAccountantPage && (
-                <td className='px-4 py-1 border text-center'>
+                <td className='px-4 py-2 border text-center'>
                   <Badge className={getStatusColor(p.outward_status)}>
                     {p.outward_status}
                   </Badge>
                 </td>
               )}
-              <td className='px-4 py-1 border text-center'>
-                <Button
-                  size='sm'
-                  className='bg-blue-700 hover:bg-blue-800 my-2 px-4 text-xs'
+              <td className='px-4 py-2 border text-center'>
+                <button
+                  className='bg-blue-800 text-white px-3 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1 mx-auto'
                   onClick={() => onView(p)}
                 >
-                  View
-                </Button>
+                  <Eye className="h-4 w-4" /> View
+                </button>
               </td>
             </tr>
           ))}

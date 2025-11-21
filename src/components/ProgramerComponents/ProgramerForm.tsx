@@ -79,6 +79,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     total_piercing: "",
     total_used_weight: "",
     total_no_of_sheets: "",
+    remarks: "",
     created_by: ""
   });
 
@@ -177,7 +178,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
   const handleValidateAll = () => {
     const fieldsToCheck = Object.keys(formData).filter(
-      (k) => !["product_details", "created_by"].includes(k)
+      (k) => !["product_details", "created_by", "remarks"].includes(k)
     );
 
     let hasError = false;
@@ -318,8 +319,11 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
       if (!allowOnlyNumbers(value)) return; // ❌ block invalid
     }
 
+    
+
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
+      
 
       // 🔹 When material changes → reset quantities
       if (name === "material_details") {
@@ -520,6 +524,7 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
     total_piercing: "Total Piercings",
     total_used_weight: "Total Used Weight (Kg)",
     total_no_of_sheets: "Total No.of Comp. per  Sheets",
+    remarks: "Remarks",
     created_by: "Created By",
   };
 
