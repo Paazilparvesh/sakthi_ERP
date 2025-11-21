@@ -388,7 +388,9 @@ const ProgramerFormWrapper: React.FC<ProgramerFormWrapperProps> = ({
 
   const handleSubmit = async () => {
     setConfirmOpen(false);
-    const created_by = localStorage.getItem("username");
+    const stored = localStorage.getItem("user");
+    const parsedUser = stored ? JSON.parse(stored) : null;
+    const created_by = parsedUser?.username || "Unknown";
     if (!created_by) {
       toast({
         title: "Error",

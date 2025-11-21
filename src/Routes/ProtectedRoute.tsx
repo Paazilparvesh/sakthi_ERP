@@ -1,20 +1,30 @@
-import { useAuth } from "@/context/AuthContext";
-import { Navigate } from "react-router-dom";
+import { useAuth } from '@/context/AuthContext';
+import { Navigate } from 'react-router-dom';
 
-const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+const ProtectedRoute: React.FC<{ children: JSX.Element; roles?: string[] }> = ({
+  children,
+  roles,
+}) => {
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    // Show a nice loader
     return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
+      <div className='flex h-screen items-center justify-center text-muted-foreground'>
         Checking session...
       </div>
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+  if (!isAuthenticated || !user) {
+    return <Navigate to='/login' replace />;
+  }
+
+  if (user.isAdmin) {
+    return children;
+  }
+  // Check role access
+  if (roles && !roles.some((r) => user?.roles.includes(r as any))) {
+    return <Navigate to='/unauthorized' replace />;
   }
 
   return children;

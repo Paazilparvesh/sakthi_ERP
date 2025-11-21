@@ -4,8 +4,8 @@ import { OutwardList } from "@/components/OutwardComponents/OutwardList";
 import OutwardDetail from "@/components/OutwardComponents/OutwardDetail";
 import { ProductType } from "@/types/inward.type";
 
-import QAForm from "@/components/OutwardComponents/QAForm"
-import AccountForm from "@/components/OutwardComponents/AccountForm";
+import QAForm from "@/components/QAComponents/QAForm"
+import AccountForm from "@/components/AccountsComponents/AccountForm";
 
 import { Button } from "@/components/ui/button";
 
@@ -22,7 +22,7 @@ const getStatusColor = (status: string): string => {
 };
 
 interface OutwardDashboardProps {
-  role: "qa" | "accountent";
+  role: "qa" | "accounts";
 }
 
 
@@ -41,6 +41,14 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
+
+      const stored = localStorage.getItem("user");
+    const parsedUser = stored ? JSON.parse(stored) : null;
+    console.log("Parsed User:", parsedUser);
+    // const user_roles = parsedUser?.roles[];
+    const user_roles = parsedUser?.roles || [];
+console.log("User Roles:", user_roles);
+
 
 
   const programMaterialMap = useMemo(() => {
@@ -222,6 +230,41 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
   const onProceedQA = () => setView("qaForm")
   const onProceedAccount = () => setView("accForm")
 
+//   const canProceedQA =
+//   user_roles.includes("qa") &&
+//   currentProduct?.outward_status?.toLowerCase() === "pending" &&
+//   // currentProduct?.qa_status?.toLowerCase() === "pending" &&
+//   (currentProduct?.materials || []).every(
+//   (m: any) => String(m.qa_status).toLowerCase() === "completed"
+// )
+
+//   hasPendingProgrammedMaterial;
+
+
+//   const canProceedAccounts =
+//   user_roles.includes("accounts") &&
+//   currentProduct?.qa_status?.toLowerCase() === "completed" &&
+//   // currentProduct?.acc_status?.toLowerCase() === "pending" &&
+//   (currentProduct?.materials || []).some(
+//   (m: any) => String(m.acc_status).toLowerCase() === "pending"
+// )
+const canProceedQA =
+  user_roles.includes("qa") &&
+  currentProduct?.outward_status?.toLowerCase() === "pending" &&
+  hasPendingProgrammedMaterial;
+
+const canProceedAccounts =
+  user_roles.includes("accounts") &&
+  hasPendingAccountMaterial &&
+  (currentProduct?.materials || []).every(
+    (m: any) => String(m.qa_status).toLowerCase() === "completed"
+  );
+
+  hasPendingAccountMaterial;
+
+  
+  
+
   return (
     <div className="p-12">
       <div className="max-w-8xl mx-auto">
@@ -258,7 +301,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
               </>
             )}
 
-            {view === "detail" && (
+            {/* {view === "detail" && (
               <div className="flex gap-4">
                 <button
                   onClick={handleBack}
@@ -269,15 +312,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
 
                 {currentProduct?.outward_status?.toLowerCase() === "pending" && (
                   <>
-                    {/* {selectedProduct.qa_status?.toLowerCase() === "pending" && selectedProduct.programer_status?.toLowerCase() === "completed" ?   (
-                      <Button
-                        onClick={onProceedQA}
-                        className="bg-blue-700 hover:bg-blue-800 text-white"
-                      >
-                        Proceed to QA
-                      </Button>
-                    ) : (<p className="flex items-center">
-                      Programer Data isnt filled</p>)} */}
+                   
                     {hasPendingProgrammedMaterial && currentProduct.qa_status?.toLowerCase() === "pending" ? (
                       <Button
                         onClick={onProceedQA}
@@ -286,9 +321,7 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
                         Proceed to QA
                       </Button>
                     ) : (
-                      // <p className="flex items-center text-red-600">
-                      //   Programmer data isn’t filled for all materials
-                      // </p>
+                     
                       ""
                     )}
                     {role === "accountent" && hasPendingAccountMaterial && (
@@ -303,7 +336,39 @@ const OutwardDashboard: React.FC<OutwardDashboardProps> = ({ role }) => {
                   </>
                 )}
               </div>
-            )}
+            )} */}
+
+            {view === "detail" && (
+  <div className="flex gap-4">
+    <button
+      onClick={handleBack}
+      className="px-5 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-sm"
+    >
+      Back
+    </button>
+
+    {/* Proceed to QA */}
+    {canProceedQA && (
+      <Button
+        onClick={onProceedQA}
+        className="bg-blue-700 hover:bg-blue-800 text-white"
+      >
+        Proceed to QA
+      </Button>
+    )}
+
+    {/* Proceed to Accounts */}
+    {canProceedAccounts && (
+      <Button
+        onClick={onProceedAccount}
+        className="bg-green-700 hover:bg-green-800 text-white"
+      >
+        Proceed to Accounts
+      </Button>
+    )}
+  </div>
+)}
+
 
             {view === "qaForm" && null}
 

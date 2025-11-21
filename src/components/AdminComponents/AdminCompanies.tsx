@@ -79,7 +79,7 @@ const AdminCompanies: React.FC = () => {
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_URL}/api/get_companys/`);
+      const resp = await fetch(`${API_URL}/api/get_companies/`);
       const data = await resp.json();
       setCompanies(Array.isArray(data) ? data : []);
     } catch {

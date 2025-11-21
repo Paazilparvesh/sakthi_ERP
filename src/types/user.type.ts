@@ -1,20 +1,15 @@
-// export type UserRole = "inward" | "programer" | "qa" | "admin" | "accountent";
-export type UserRole = "inward" | "programer" | "admin" | "accountent";
+export type UserRole = 'inward' | 'programer' | 'qa' | 'accountent';
 
 export interface User {
   username: string;
-  role_type: UserRole;
-  token?: string;
+  roles: UserRole[]; // multiple roles
+  isAdmin: boolean;
 }
 
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (
-    username: string,
-    password: string,
-    role_type: UserRole
-  ) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<User | null>;
   logout: () => void;
 }

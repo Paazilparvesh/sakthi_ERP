@@ -20,6 +20,7 @@ export interface ProductType {
   programer_status?: string;
   outward_status?: string;
   qa_status?: string;
+  acc_status?: string;
   created_by?: string;
 
   materials: Material[];

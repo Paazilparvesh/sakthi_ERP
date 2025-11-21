@@ -24,7 +24,7 @@ const InwardForm: React.FC<InwardProps> = ({ formData, setFormData, setFormError
     const fetchCompanies = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${API_URL}/api/get_companys/`);
+        const response = await fetch(`${API_URL}/api/get_companies/`);
         if (!response.ok) throw new Error("Failed to fetch companies");
         const data = await response.json();
         setCompanyList(data);

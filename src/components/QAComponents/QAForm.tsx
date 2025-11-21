@@ -55,8 +55,10 @@ const QAForm: React.FC<QAFormProps> = ({
   const allowOnlyNumbers = (value: string) => /^(\d+(\.\d*)?|\.\d+)?$/.test(value);
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const username = localStorage.getItem("username");
-  const role = localStorage.getItem("Role_Type");
+        const stored = localStorage.getItem("user");
+    const parsedUser = stored ? JSON.parse(stored) : null;
+    const user_name = parsedUser?.username;
+
 
   const [machines, setMachines] = useState<{ id: number; machine: string }[]>([]);
 
@@ -246,19 +248,20 @@ const QAForm: React.FC<QAFormProps> = ({
       no_of_sheets: Number(formData.no_of_sheets),
       cycletime_per_sheet: Number(formData.cycletime_per_sheet),
       machines_used: machineTimes, // <--- NEW
+      created_by: user_name,
     };
 
 
-    // Detect user type safely
-    const lowerRole = String(role).trim().toLowerCase();
+    // // Detect user type safely
+    // const lowerRole = String(role).trim().toLowerCase();
 
-    if (lowerRole.includes("qa")) {
-      payload.created_by_qa = username;
-    }
-    else if (
-      lowerRole.includes("acc")) {
-      payload.created_by_acc = username;
-    }
+    // if (lowerRole.includes("qa")) {
+    //   payload.created_by_qa = username;
+    // }
+    // else if (
+    //   lowerRole.includes("acc")) {
+    //   payload.created_by_acc = username;
+    // }
 
 
     try {
@@ -508,6 +511,7 @@ const QAForm: React.FC<QAFormProps> = ({
                   value={mt.time}
                   onChange={(e) => updateMachineTime(mt.machine, e.target.value)}
                   step="60"
+                   required
                   className="border rounded-lg px-3 py-2 border-gray-300"
                 />
               </div>

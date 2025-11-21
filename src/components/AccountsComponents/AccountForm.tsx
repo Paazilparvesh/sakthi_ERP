@@ -17,6 +17,8 @@ interface AccountFormData {
     invoice_no: string;
     status: string;
     remarks: string;
+
+    created_by?: string;
 }
 
 const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, materials, onBack, onSubmitSuccess }) => {
@@ -27,6 +29,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
         invoice_no: "",
         status: "",
         remarks: "",
+
     });
 
     const [programDate, setProgramDate] = useState<string>("");
@@ -37,6 +40,11 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
     const userRole = localStorage.getItem("Role_Type");
     const username = localStorage.getItem("username");
     const API_URL = import.meta.env.VITE_API_URL;
+
+    const stored = localStorage.getItem("user");
+    const parsedUser = stored ? JSON.parse(stored) : null;
+    const user_name = parsedUser?.username;
+
 
     /* 🔹 Load Program Date when material changes */
     useEffect(() => {
@@ -139,6 +147,7 @@ const AccountForm: React.FC<AccountFormProps> = ({ productId, companyName, mater
             invoice_no: formData.invoice_no,
             status: formData.status,
             remarks: formData.remarks,
+             created_by: user_name,
         };
 
         if (userRole?.toLowerCase() === "qa") payload.created_by_qa = username;

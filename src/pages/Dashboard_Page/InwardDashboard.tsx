@@ -156,7 +156,9 @@ const InwardDashboard: React.FC = () => {
     if (isSubmitting) return; // Prevent double-click submissions
     setIsSubmitting(true); // Disable button + start loading  
 
-    const created_by = localStorage.getItem("username")
+    const stored = localStorage.getItem("user");
+    const parsedUser = stored ? JSON.parse(stored) : null;
+    const created_by = parsedUser?.username || "Unknown";
 
     try {
       // ✅ Combine Product + Materials into a single payload
