@@ -63,7 +63,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       localStorage.setItem('user', JSON.stringify(loggedUser));
-      console.log('Logged in user data:', loggedUser);
       setUser(loggedUser);
 
       return loggedUser;
